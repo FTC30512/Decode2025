@@ -1,2 +1,21 @@
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+        maven { url 'https://maven.brott.dev/' } // 👈 Road Runner repo
+    }
+}
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+    repositories {
+        google()
+        mavenCentral()
+        maven { url 'https://maven.brott.dev/' } // 👈 Road Runner repo again
+    }
+}
+
 include ':FtcRobotController'
 include ':TeamCode'
+include ':MeepMeepTesting'
