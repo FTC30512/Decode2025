@@ -9,9 +9,8 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 public class TestMotorBumper extends LinearOpMode {
     @Override
     public void runOpMode() {
-        DcMotor shooter = hardwareMap.get(DcMotor.class, "Shooter");
-        shooter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        shooter.setDirection(DcMotorSimple.Direction.REVERSE);
+        DcMotor testMotor = hardwareMap.get(DcMotor.class, "Test");
+        testMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         waitForStart();
         double speed = 0;
 
@@ -30,7 +29,7 @@ public class TestMotorBumper extends LinearOpMode {
                     sleep(200);
                 }
             }
-            shooter.setPower(speed);
+            testMotor.setPower(speed);
             telemetry.addData("Speed", speed);
             telemetry.update();
         }

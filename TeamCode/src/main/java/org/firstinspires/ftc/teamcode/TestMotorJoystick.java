@@ -15,7 +15,9 @@ public class TestMotorJoystick extends LinearOpMode {
 
         while (opModeIsActive()){
             double speed = -gamepad1.left_stick_y;
-            testMotor.setPower(speed);
+            if (Math.abs(gamepad1.left_stick_y) <= 1) {
+                testMotor.setPower(speed);
+            }
         }
     }
 }
