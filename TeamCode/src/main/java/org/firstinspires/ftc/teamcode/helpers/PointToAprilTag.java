@@ -87,6 +87,8 @@ public class PointToAprilTag {
 
             double xError = tag.ftcPose.x;
             double turnPower = xError * 0.5;
+            turnPower = Math.max(-1.0, Math.min(turnPower, 1.0));
+
 
             if (xError > 0) {
                 lf.setPower(turnPower);
