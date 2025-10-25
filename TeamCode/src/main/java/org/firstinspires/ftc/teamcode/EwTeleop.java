@@ -1,85 +1,93 @@
 package org.firstinspires.ftc.teamcode;
 
-import android.util.Size;
-
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 
-import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.teamcode.helpers.DetectArtifacts;
 import org.firstinspires.ftc.teamcode.helpers.Movement;
 import org.firstinspires.ftc.teamcode.helpers.PointToAprilTag;
 import org.firstinspires.ftc.teamcode.helpers.Velocity;
-import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagLibrary;
-import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
 @TeleOp(name = "EW TeleOp", group = "Main")
 public class EWTeleOp extends LinearOpMode {
 
-    // Camera calibration (for Logitech C920 @ 800x448)
+    // --- Servos ---
+    private Servo gateServo, shooterServo;
 
+    // --- Motors ---
+    private DcMotor leftFront, leftRear, rightFront, rightRear;
+    private DcMotor intake, shooter;
+
+    // --- Sensors ---
+    private ColorSensor colorSensor;
+    private IMU imu;
+
+    // --- Helper Classes ---
+    private Movement movement;
+    private PointToAprilTag pointToAprilTag;
+    private Velocity velocity;
+    private DetectArtifacts detectArtifacts;
+
+    // --- Shooter Control ---
+    private double shooterSpeed = 0.7;
+    private boolean leftBumperPrev = false;
+    private boolean leftTriggerPrev = false;
 
     @Override
     public void runOpMode() {
 
-        // Define your custom AprilTags
-        AprilTagLibrary aprilTagLibrary = new AprilTagLibrary.Builder()
-                .addTag(20, "Blue Target", 6.5, DistanceUnit.INCH)
-                .addTag(24, "Red Target", 6.5, DistanceUnit.INCH)
-                .addTag(22, "Motif Pattern", 6.5, DistanceUnit.INCH)
-                .build();
+        // --- Initialize hardware ---
+        initHardware();
 
-        DcMotor leftFront = hardwareMap.dcMotor.get("leftFront");   // port 0
-        DcMotor leftRear = hardwareMap.dcMotor.get("leftRear");     // port 1
-        DcMotor rightFront = hardwareMap.dcMotor.get("rightFront"); // port 2
-        DcMotor rightRear = hardwareMap.dcMotor.get("rightRear");   // port 3
-        DcMotor intake= hardwareMap.dcMotor.get("Intake");
-        DcMotor shooter = hardwareMap.dcMotor.get("Shooter");
-        Servo shooterServo = hardwareMap.servo.get("shooterServo");
-        Servo gateServo = hardwareMap.servo.get("gateServo");
-        gateServo.setDirection(Servo.Direction.REVERSE);
-
-        leftFront.setDirection(DcMotor.Direction.REVERSE);
-        leftRear.setDirection(DcMotor.Direction.REVERSE);
-
-        shooterServo.setDirection(Servo.Direction.REVERSE);
-
-        shooter.setDirection(DcMotorSimple.Direction.REVERSE);
-
-        Movement movement = new Movement(leftFront, leftRear, rightFront, rightRear, gamepad1);
-        PointToAprilTag pointToAprilTag = new PointToAprilTag(hardwareMap, telemetry);
-        Velocity velocity = new Velocity(pointToAprilTag);
+        // --- Initialize helpers ---
+        movement = new Movement(leftFront, leftRear, rightFront, rightRear, gamepad1, imu);
+        pointToAprilTag = new PointToAprilTag(hardwareMap, telemetry);
+        velocity = new Velocity(pointToAprilTag);
+        detectArtifacts = new DetectArtifacts(colorSensor);
 
         telemetry.addLine("Initialized. Press PLAY to start.");
         telemetry.update();
-
         gamepad1.rumble(500);
+
         waitForStart();
 
         boolean readyToShoot = false;
+        shooter.setPower(shooterSpeed);
 
-        shooter.setPower(0.7);
-
+        // --- Main loop ---
         while (opModeIsActive()) {
-            // Regular driving
+
+            // --- Adjust shooter speed with bumpers/triggers (edge detection) ---
+            if (gamepad1.left_bumper && !leftBumperPrev) {
+                shooterSpeed += 0.05;
+            }
+            if (gamepad1.left_trigger > 0.5 && !leftTriggerPrev) {
+                shooterSpeed -= 0.05;
+            }
+            shooterSpeed = Math.max(0, Math.min(shooterSpeed, 1));
+            leftBumperPrev = gamepad1.left_bumper;
+            leftTriggerPrev = gamepad1.left_trigger > 0.5;
+            shooter.setPower(shooterSpeed);
+
+            // --- Driving ---
             movement.drive();
 
-            // Start intake
+            // --- Intake ---
             intake.setPower(1);
 
+            // --- Shooting logic ---
+            String detected = detectArtifacts.getColor();
             if (readyToShoot || gamepad1.right_bumper) {
-                gateServo.setPosition(0.3);
-                sleep(200);
-                shooterServo.setPosition(1);
-                sleep(500);
-                shooterServo.setPosition(0.65);
-                sleep(350);
-                gateServo.setPosition(0);
-                sleep(200);
+                shoot();
+
                 telemetry.addLine("Shooting");
                 readyToShoot = false;
             } else {
@@ -87,19 +95,71 @@ public class EWTeleOp extends LinearOpMode {
                 gateServo.setPosition(0);
             }
 
-
-            // --- Update AprilTag each loop ---
+            // --- AprilTag updates and aiming ---
             pointToAprilTag.updateTagDistance();
-
-            // --- Turn toward tag if right trigger is pressed ---
             if (gamepad1.right_trigger > 0.5) {
                 pointToAprilTag.turnToTag(leftFront, leftRear, rightFront, rightRear);
                 shooter.setPower(velocity.getSpeed(hardwareMap, telemetry));
                 readyToShoot = true;
             }
 
-            telemetry.addData("Position", shooterServo.getPosition());
+            // --- Telemetry ---
+            telemetry.addData("Detected Color", detected);
+            telemetry.addData("Shooter Servo Position", shooterServo.getPosition());
+            telemetry.addData("Shooter Power", shooter.getPower());
+            telemetry.addData("Shooter Speed Setting", shooterSpeed);
             telemetry.update();
         }
+    }
+
+    // --- Hardware initialization method ---
+    private void initHardware() {
+        // Motors
+        leftFront = hardwareMap.dcMotor.get("leftFront");
+        leftRear = hardwareMap.dcMotor.get("leftRear");
+        rightFront = hardwareMap.dcMotor.get("rightFront");
+        rightRear = hardwareMap.dcMotor.get("rightRear");
+        intake = hardwareMap.dcMotor.get("Intake");
+        shooter = hardwareMap.dcMotor.get("Shooter");
+
+        leftFront.setDirection(DcMotor.Direction.REVERSE);
+        leftRear.setDirection(DcMotor.Direction.REVERSE);
+        shooter.setDirection(DcMotorSimple.Direction.REVERSE);
+
+        // Servos
+        shooterServo = hardwareMap.servo.get("shooterServo");
+        gateServo = hardwareMap.servo.get("gateServo");
+        gateServo.setDirection(Servo.Direction.REVERSE);
+        shooterServo.setDirection(Servo.Direction.REVERSE);
+
+        // Sensors
+        colorSensor = hardwareMap.colorSensor.get("colorSensor");
+        imu = hardwareMap.get(IMU.class, "imu");
+
+        IMU.Parameters parameters = new IMU.Parameters(
+                new RevHubOrientationOnRobot(
+                        RevHubOrientationOnRobot.LogoFacingDirection.FORWARD,
+                        RevHubOrientationOnRobot.UsbFacingDirection.LEFT
+                )
+        );
+        imu.initialize(parameters);
+
+        AprilTagLibrary aprilTagLibrary = new AprilTagLibrary.Builder()
+                .addTag(20, "Blue Target", 6.5, DistanceUnit.INCH)
+                .addTag(24, "Red Target", 6.5, DistanceUnit.INCH)
+                .addTag(22, "Motif Pattern", 6.5, DistanceUnit.INCH)
+                .build();
+    }
+
+    // --- Shooting method ---
+    public void shoot() {
+        gateServo.setPosition(0.3);
+        sleep(200);
+        shooterServo.setPosition(1);
+        sleep(500);
+        shooterServo.setPosition(0.65);
+        sleep(350);
+        gateServo.setPosition(0);
+        sleep(200);
     }
 }
