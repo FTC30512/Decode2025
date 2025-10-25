@@ -40,6 +40,8 @@ public class EWTeleOp extends LinearOpMode {
         DcMotor intake= hardwareMap.dcMotor.get("Intake");
         DcMotor shooter = hardwareMap.dcMotor.get("Shooter");
         Servo shooterServo = hardwareMap.servo.get("shooterServo");
+        Servo gateServo = hardwareMap.servo.get("gateServo");
+        gateServo.setDirection(Servo.Direction.REVERSE);
 
         leftFront.setDirection(DcMotor.Direction.REVERSE);
         leftRear.setDirection(DcMotor.Direction.REVERSE);
@@ -55,26 +57,34 @@ public class EWTeleOp extends LinearOpMode {
         telemetry.addLine("Initialized. Press PLAY to start.");
         telemetry.update();
 
-
+        gamepad1.rumble(500);
         waitForStart();
 
         boolean readyToShoot = false;
 
-//        shooter.setPower(0.7);
+        shooter.setPower(0.7);
 
         while (opModeIsActive()) {
             // Regular driving
             movement.drive();
 
-//            // Start intake
-//            intake.setPower(1);
+            // Start intake
+            intake.setPower(1);
 
             if (readyToShoot || gamepad1.right_bumper) {
+                gateServo.setPosition(0.3);
+                sleep(200);
                 shooterServo.setPosition(1);
+                sleep(500);
+                shooterServo.setPosition(0.65);
+                sleep(350);
+                gateServo.setPosition(0);
+                sleep(200);
                 telemetry.addLine("Shooting");
                 readyToShoot = false;
             } else {
-                shooterServo.setPosition(0.4);
+                shooterServo.setPosition(0.65);
+                gateServo.setPosition(0);
             }
 
 
