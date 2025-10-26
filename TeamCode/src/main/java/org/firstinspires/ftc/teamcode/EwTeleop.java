@@ -87,7 +87,6 @@ public class EWTeleOp extends LinearOpMode {
             String detected = detectArtifacts.getColor();
             if (readyToShoot || gamepad1.right_bumper) {
                 shoot();
-
                 telemetry.addLine("Shooting");
                 readyToShoot = false;
             } else {
