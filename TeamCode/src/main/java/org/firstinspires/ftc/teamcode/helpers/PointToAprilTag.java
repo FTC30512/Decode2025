@@ -58,14 +58,19 @@ public class PointToAprilTag {
     }
 
     // 👇 Updates distance (inches)
+    // 👇 Updates distance (inches)
     public void updateTagDistance() {
         List<AprilTagDetection> detections = aprilTagProcessor.getDetections();
         if (!detections.isEmpty()) {
             AprilTagDetection tag = detections.get(0);
-            if (tag != null){
-                lastRangeIN = tag.ftcPose.range;
 
+            if (tag != null && tag.ftcPose != null) {
+                lastRangeIN = tag.ftcPose.range;
+            } else {
+                telemetry.addLine("Tag found but no pose data (null ftcPose)");
             }
+        } else {
+            telemetry.addLine("No AprilTags detected");
         }
     }
 
@@ -77,38 +82,39 @@ public class PointToAprilTag {
         if (!detections.isEmpty()) {
             AprilTagDetection tag = detections.get(0);
 
-            // Update last distance (inches)
-            lastRangeIN = tag.ftcPose.range;
+            if (tag != null && tag.ftcPose != null) {
+                lastRangeIN = tag.ftcPose.range;
+                double xError = tag.ftcPose.x;
 
-//            telemetry.addLine("Found AprilTag!");
-//            telemetry.addData("Tag ID", tag.id);
-//            telemetry.addData("Distance (in)", lastRangeIN);
-//            telemetry.addData("Yaw (deg)", "%.1f", tag.ftcPose.yaw);
+                double turnPower = xError * 0.5;
+                turnPower = Math.max(-1.0, Math.min(turnPower, 1.0));
 
-            double xError = tag.ftcPose.x;
-            double turnPower = xError * 0.5;
-            turnPower = Math.max(-1.0, Math.min(turnPower, 1.0));
+                if (xError > 0) {
+                    lf.setPower(turnPower);
+                    lr.setPower(turnPower);
+                    rf.setPower(-turnPower);
+                    rr.setPower(-turnPower);
+                } else {
+                    lf.setPower(-turnPower);
+                    lr.setPower(-turnPower);
+                    rf.setPower(turnPower);
+                    rr.setPower(turnPower);
+                }
 
+                // Stop turning when aligned
+                if (Math.abs(xError) < 5.0) {
+                    lf.setPower(0);
+                    lr.setPower(0);
+                    rf.setPower(0);
+                    rr.setPower(0);
+                }
 
-            if (xError > 0) {
-                lf.setPower(turnPower);
-                lr.setPower(turnPower);
-                rf.setPower(-turnPower);
-                rr.setPower(-turnPower);
-            }else {
-                lf.setPower(-turnPower);
-                lr.setPower(-turnPower);
-                rf.setPower(turnPower);
-                rr.setPower(turnPower);
-            }
-
-            // Stop turning when aligned
-            if (Math.abs(xError) < 5.0) {
+            } else {
+                telemetry.addLine("Tag detected but ftcPose is null");
                 lf.setPower(0);
                 lr.setPower(0);
                 rf.setPower(0);
                 rr.setPower(0);
-                return;
             }
 
         } else {
@@ -121,4 +127,5 @@ public class PointToAprilTag {
 
         telemetry.update();
     }
+
 }
