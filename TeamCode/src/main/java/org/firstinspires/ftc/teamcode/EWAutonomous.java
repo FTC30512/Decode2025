@@ -67,9 +67,11 @@ public class EWAutonomous extends LinearOpMode {
         waitForStart();
 
         if (opModeIsActive()) {
-            straightInches(10, 10); // move forward 10 inches
+            straightInches(100, 10); // move forward 10 inches
             sleep(500);
-            straightInches(-10, 10); // move backward 10 inches
+            straightInches(-90, 60); // move backward 10 inches
+            strafeInches("left", 50, 10);
+            strafeInches("right", 20, 90);
         }
     }
 
@@ -151,6 +153,32 @@ public class EWAutonomous extends LinearOpMode {
         YawPitchRollAngles angles = imu.getRobotYawPitchRollAngles();
         return angles.getYaw(AngleUnit.DEGREES);
     }
+    public double getYaw() {
+        //double angles;
+        ///angles = imu.getRobotYawPitchRollAngles();
+        //double yaw = angles; // Yaw is typically the first angle returned
+        // Define hub orientation on the robot
+        RevHubOrientationOnRobot orientationOnRobot = new RevHubOrientationOnRobot(
+                RevHubOrientationOnRobot.LogoFacingDirection.UP,
+                RevHubOrientationOnRobot.UsbFacingDirection.FORWARD
+        );
+
+        // Initialize IMU from hardware
+        // Initialize IMU with orientation
+        IMU.Parameters parameters = new IMU.Parameters(orientationOnRobot);
+        imu.initialize(parameters);
+
+
+        // Get yaw, pitch, roll angles
+        YawPitchRollAngles angles = imu.getRobotYawPitchRollAngles();
+        double yaw = angles.getYaw(AngleUnit.DEGREES);
+
+        telemetry.addData("Yaw", yaw);
+        telemetry.update();
+        imu = hardwareMap.get(IMU.class, "imu");
+
+        return yaw;
+    }
 
     public void straightInches(double inches, double powerPct) {
         int ticks = (int) (inches * countsPerInch);
@@ -209,5 +237,82 @@ public class EWAutonomous extends LinearOpMode {
         //telemetry.addData("Y Position", currentY);
         //telemetry.update();
         stopAndReset();
+    }
+    public void strafeInches(String dir, double inches, double powerPct) {
+        powerPct /= 100;
+        double fixFactor = 1.07;
+        int ticks = (int) (inches * fixFactor * countsPerInch);
+
+        if (dir.equals("left")) {
+            ticks *= -1;
+        }
+
+
+        leftFront.setTargetPosition(leftFront.getCurrentPosition() + ticks);
+        leftRear.setTargetPosition(leftRear.getCurrentPosition() - ticks);
+        rightFront.setTargetPosition(rightFront.getCurrentPosition() - ticks);
+        rightRear.setTargetPosition(rightRear.getCurrentPosition() + ticks);
+
+        for (DcMotor m : new DcMotor[]{leftFront, leftRear, rightFront, rightRear}) {
+            m.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        }
+
+        double kP = 0.1;
+        double minPower = 0.15;
+        double angleFix = 0.01;
+        double startAngle = getHeading();
+
+        while (opModeIsActive() && (leftFront.isBusy() || leftRear.isBusy() || rightFront.isBusy() || rightRear.isBusy())) {
+            double avgTicks = (Math.abs(leftFront.getCurrentPosition()) + Math.abs(leftRear.getCurrentPosition()) +
+                    Math.abs(rightFront.getCurrentPosition()) + Math.abs(rightRear.getCurrentPosition())) / 4.0;
+            double inchesDone = avgTicks / countsPerInch;
+            double leftToGo = Math.max(0.1, Math.abs(inches) - inchesDone);
+            double powerNow = Math.max(minPower, Math.min(kP * leftToGo, powerPct));
+
+            double error = startAngle - getHeading();
+            if (error > 180) error -= 360;
+            if (error < -180) error += 360;
+            double fix = error * angleFix;
+
+            leftFront.setPower(powerNow - fix);
+            leftRear.setPower(-powerNow - fix);
+            rightFront.setPower(-powerNow + fix);
+            rightRear.setPower(powerNow + fix);
+        }
+
+        //currentX += inches;
+        //telemetry.addData("X Position", currentX);
+        //telemetry.addData("Y Position", currentY);
+        telemetry.update();
+        stopAndReset();
+    }
+
+    public void Turn_By_Gyro (double targetYaw, double leftPowerpct, double rightPowerpct){
+        double currentYaw = getYaw(); // Replace with IMU reading
+        double error = targetYaw - currentYaw;
+        double correction = 0.5 * error;
+
+        double kP = 0.05; // Optional: use for fine-tuned correction
+        boolean turnClockwise = currentYaw < targetYaw;
+
+        double leftPower = leftPowerpct / 100.0;
+        double rightPower = rightPowerpct/ 100.0;
+
+        if (turnClockwise) {
+            leftPower = Math.abs(leftPower);
+            rightPower = -Math.abs(rightPower);
+            while (getYaw() < targetYaw) {
+                setDrivePower(leftPower, leftPower, rightPower, rightPower);
+            }
+        } else {
+            leftPower = -Math.abs(leftPower);
+            rightPower = Math.abs(rightPower);
+            while (getYaw() > targetYaw) {
+                setDrivePower(leftPower, leftPower, rightPower, rightPower);
+            }
+        }
+
+        telemetry.addData("Turn", "Completed to %.2f degrees", targetYaw);
+        telemetry.update();
     }
 }
