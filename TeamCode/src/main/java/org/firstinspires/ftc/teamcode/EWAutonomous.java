@@ -6,15 +6,12 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 
-import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
-import org.firstinspires.ftc.teamcode.helpers.AutonomousMovement;
 import org.firstinspires.ftc.vision.apriltag.AprilTagLibrary;
 
 @Autonomous(name = "EW Autonomous", group = "Autonomous")
@@ -28,6 +25,7 @@ public class EWAutonomous extends LinearOpMode {
     private ColorSensor colorSensor;
     private IMU imu;
     double countsPerInch;
+    private double shooterSpeed = 0.65;
     double wheelSize = 4.09;
     double ticksPerRev = 537.7;
     //HardwareMap hardwareMap;
@@ -47,7 +45,7 @@ public class EWAutonomous extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
 
-        initHardwareTest();
+        initHardware();
 
         /*
         countsPerInch = ticksPerRev / (wheelSize * Math.PI);
@@ -66,12 +64,18 @@ public class EWAutonomous extends LinearOpMode {
 
         waitForStart();
 
+
         if (opModeIsActive()) {
-            straightInches(100, 10); // move forward 10 inches
-            sleep(500);
-            straightInches(-90, 60); // move backward 10 inches
-            strafeInches("left", 50, 10);
-            strafeInches("right", 20, 90);
+            intake.setPower(1);
+            straightInches(-40, 75); // move backward 50 inches
+            sleep(200);
+            shoot(0.7);
+            sleep(400);
+            shoot(0.65);
+            sleep(400);
+            shoot(0.7);
+            Turn_By_Gyro(150, 25, 25);
+            straightInches(-40, 50);
         }
     }
 
@@ -132,6 +136,13 @@ public class EWAutonomous extends LinearOpMode {
                 .addTag(22, "Motif Pattern", 6.5, DistanceUnit.INCH)
                 .build();
     }
+    private void setDrivePower(double lfPower, double lrPower, double rfPower, double rrPower)
+    {
+        leftFront.setPower(lfPower);
+        leftRear.setPower(lrPower);
+        rightFront.setPower(rfPower);
+        rightRear.setPower(rrPower);
+    }
 
     private void stopAndReset() {
         for (DcMotor motor : new DcMotor[]{leftFront, leftRear, rightFront, rightRear}) {
@@ -153,32 +164,6 @@ public class EWAutonomous extends LinearOpMode {
         YawPitchRollAngles angles = imu.getRobotYawPitchRollAngles();
         return angles.getYaw(AngleUnit.DEGREES);
     }
-    public double getYaw() {
-        //double angles;
-        ///angles = imu.getRobotYawPitchRollAngles();
-        //double yaw = angles; // Yaw is typically the first angle returned
-        // Define hub orientation on the robot
-        RevHubOrientationOnRobot orientationOnRobot = new RevHubOrientationOnRobot(
-                RevHubOrientationOnRobot.LogoFacingDirection.UP,
-                RevHubOrientationOnRobot.UsbFacingDirection.FORWARD
-        );
-
-        // Initialize IMU from hardware
-        // Initialize IMU with orientation
-        IMU.Parameters parameters = new IMU.Parameters(orientationOnRobot);
-        imu.initialize(parameters);
-
-
-        // Get yaw, pitch, roll angles
-        YawPitchRollAngles angles = imu.getRobotYawPitchRollAngles();
-        double yaw = angles.getYaw(AngleUnit.DEGREES);
-
-        telemetry.addData("Yaw", yaw);
-        telemetry.update();
-        imu = hardwareMap.get(IMU.class, "imu");
-
-        return yaw;
-    }
 
     public void straightInches(double inches, double powerPct) {
         int ticks = (int) (inches * countsPerInch);
@@ -197,6 +182,7 @@ public class EWAutonomous extends LinearOpMode {
         rightRear.setTargetPosition(rightRear.getCurrentPosition() + ticks);
 
         for (DcMotor m : new DcMotor[]{leftFront, leftRear, rightFront, rightRear}) {
+            m.setPower(0.1);
             m.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         }
 
@@ -205,31 +191,31 @@ public class EWAutonomous extends LinearOpMode {
         double angleFix = 0.01;
         double startAngle = getHeading();
 
-        telemetry.addData("startAngle", startAngle);
-        telemetry.addData("leftFront.getCurrentPosition()", leftFront.getCurrentPosition());
-        telemetry.addData("leftRear.getCurrentPosition()", leftRear.getCurrentPosition());
-        telemetry.addData("rightFront.getCurrentPosition()", rightFront.getCurrentPosition());
-        telemetry.addData("rightRear.getCurrentPosition()", rightRear.getCurrentPosition());
-        telemetry.update();
         while (opModeIsActive() && (leftFront.isBusy() || leftRear.isBusy() || rightFront.isBusy() || rightRear.isBusy())) {
 
             double avgTicks = (Math.abs(leftFront.getCurrentPosition()) + Math.abs(leftRear.getCurrentPosition()) +
                     Math.abs(rightFront.getCurrentPosition()) + Math.abs(rightRear.getCurrentPosition())) / 4.0;
             double inchesDone = avgTicks / countsPerInch;
             double leftToGo = Math.max(0.1, Math.abs(inches) - inchesDone);
-            double powerNow = Math.max(minPower, Math.min(kP * leftToGo, powerPct));
+            double powerNow = powerPct;//Math.max(minPower, Math.min(kP * leftToGo, powerPct));
 
             double error = startAngle - getHeading();
             if (error > 180) error -= 360;
             if (error < -180) error += 360;
             double fix = error * angleFix;
 
-            telemetry.addLine("Power: " + powerNow + " Fix: " + fix);
+            telemetry.addData("startAngle", startAngle);
+            telemetry.addData("leftFront.getCurrentPosition()", leftFront.getCurrentPosition());
+            telemetry.addData("leftRear.getCurrentPosition()", leftRear.getCurrentPosition());
+            telemetry.addData("rightFront.getCurrentPosition()", rightFront.getCurrentPosition());
+            telemetry.addData("rightRear.getCurrentPosition()", rightRear.getCurrentPosition());
+            telemetry.addLine("Power: " + powerNow + " Fix: " + fix + " Error: " + error);
+
             leftFront.setPower(powerNow - fix);
             leftRear.setPower(powerNow - fix);
             rightFront.setPower(powerNow + fix);
             rightRear.setPower(powerNow + fix);
-            //telemetry.update();
+            telemetry.update();
         }
 
         //currentY += inches;
@@ -288,7 +274,7 @@ public class EWAutonomous extends LinearOpMode {
     }
 
     public void Turn_By_Gyro (double targetYaw, double leftPowerpct, double rightPowerpct){
-        double currentYaw = getYaw(); // Replace with IMU reading
+        double currentYaw = getHeading(); // Replace with IMU reading
         double error = targetYaw - currentYaw;
         double correction = 0.5 * error;
 
@@ -299,20 +285,32 @@ public class EWAutonomous extends LinearOpMode {
         double rightPower = rightPowerpct/ 100.0;
 
         if (turnClockwise) {
-            leftPower = Math.abs(leftPower);
-            rightPower = -Math.abs(rightPower);
-            while (getYaw() < targetYaw) {
+            leftPower = -Math.abs(leftPower);
+            rightPower = Math.abs(rightPower);
+            while (getHeading() < targetYaw) {
                 setDrivePower(leftPower, leftPower, rightPower, rightPower);
             }
         } else {
-            leftPower = -Math.abs(leftPower);
-            rightPower = Math.abs(rightPower);
-            while (getYaw() > targetYaw) {
+            leftPower = Math.abs(leftPower);
+            rightPower = -Math.abs(rightPower);
+            while (getHeading() > targetYaw) {
                 setDrivePower(leftPower, leftPower, rightPower, rightPower);
             }
         }
 
         telemetry.addData("Turn", "Completed to %.2f degrees", targetYaw);
         telemetry.update();
+    }
+    public void shoot(double speed) {
+        shooter.setPower(speed);
+        sleep(500);
+        gateServo.setPosition(0.3);
+        sleep(100);
+        shooterServo.setPosition(1);
+        sleep(200);
+        shooterServo.setPosition(0.65);
+        sleep(150);
+        gateServo.setPosition(0);
+        sleep(100);
     }
 }
