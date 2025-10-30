@@ -62,6 +62,10 @@ public class EWTeleOp extends LinearOpMode {
         boolean readyToShoot = false;
         shooter.setPower(shooterSpeed);
 
+        for (DcMotor m : new DcMotor[]{leftFront, leftRear, rightFront, rightRear}) {
+            m.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        }
+
         // --- Main loop ---
         while (opModeIsActive()) {
 

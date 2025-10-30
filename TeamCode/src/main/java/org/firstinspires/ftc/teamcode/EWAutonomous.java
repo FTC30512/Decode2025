@@ -64,18 +64,18 @@ public class EWAutonomous extends LinearOpMode {
 
         waitForStart();
 
-
         if (opModeIsActive()) {
             intake.setPower(1);
-            straightInches(-40, 75); // move backward 50 inches
+            shooter.setPower(0.7);
+            straightInches(-45, 75); // move backward 50 inches
             sleep(200);
-            shoot(0.7);
+            shoot();
             sleep(400);
-            shoot(0.65);
+            shoot();
             sleep(400);
-            shoot(0.7);
-            Turn_By_Gyro(150, 25, 25);
-            straightInches(-40, 50);
+            shoot();
+            Turn_By_Gyro(50, 25, 25);
+            straightInches(-0, 50);
         }
     }
 
@@ -274,6 +274,7 @@ public class EWAutonomous extends LinearOpMode {
     }
 
     public void Turn_By_Gyro (double targetYaw, double leftPowerpct, double rightPowerpct){
+        targetYaw = -targetYaw;
         double currentYaw = getHeading(); // Replace with IMU reading
         double error = targetYaw - currentYaw;
         double correction = 0.5 * error;
@@ -301,16 +302,14 @@ public class EWAutonomous extends LinearOpMode {
         telemetry.addData("Turn", "Completed to %.2f degrees", targetYaw);
         telemetry.update();
     }
-    public void shoot(double speed) {
-        shooter.setPower(speed);
-        sleep(500);
+    public void shoot() {
         gateServo.setPosition(0.3);
-        sleep(100);
-        shooterServo.setPosition(1);
         sleep(200);
+        shooterServo.setPosition(1);
+        sleep(500);
         shooterServo.setPosition(0.65);
-        sleep(150);
+        sleep(350);
         gateServo.setPosition(0);
-        sleep(100);
+        sleep(200);
     }
 }
