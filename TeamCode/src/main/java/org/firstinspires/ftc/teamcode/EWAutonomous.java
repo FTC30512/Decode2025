@@ -66,7 +66,7 @@ public class EWAutonomous extends LinearOpMode {
 
         if (opModeIsActive()) {
             intake.setPower(1);
-            shooter.setPower(0.7);
+            shooter.setPower(0.65);
             straightInches(-45, 75); // move backward 50 inches
             sleep(200);
             shoot();
@@ -74,8 +74,8 @@ public class EWAutonomous extends LinearOpMode {
             shoot();
             sleep(400);
             shoot();
-            Turn_By_Gyro(50, 25, 25);
-            straightInches(-0, 50);
+            Turn_By_Gyro(15, 25, 25);
+            straightInches(30, 50);
         }
     }
 
