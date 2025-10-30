@@ -12,8 +12,6 @@ import com.qualcomm.robotcore.hardware.Servo;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.helpers.DetectArtifacts;
 import org.firstinspires.ftc.teamcode.helpers.Movement;
-import org.firstinspires.ftc.teamcode.helpers.PointToAprilTag;
-import org.firstinspires.ftc.teamcode.helpers.Velocity;
 import org.firstinspires.ftc.vision.apriltag.AprilTagLibrary;
 
 @TeleOp(name = "EW TeleOp", group = "Main")
@@ -32,14 +30,12 @@ public class EWTeleOp extends LinearOpMode {
 
     // --- Helper Classes ---
     private Movement movement;
-    private PointToAprilTag pointToAprilTag;
-    private Velocity velocity;
     private DetectArtifacts detectArtifacts;
 
     // --- Shooter Control ---
     private double shooterSpeed = 0.7;
-    private boolean leftBumperPrev = false;
-    private boolean leftTriggerPrev = false;
+    private boolean dpadUp = false;
+    private boolean dpadDown = false;
 
     @Override
     public void runOpMode() {
@@ -49,8 +45,6 @@ public class EWTeleOp extends LinearOpMode {
 
         // --- Initialize helpers ---
         movement = new Movement(leftFront, leftRear, rightFront, rightRear, gamepad1, imu);
-        pointToAprilTag = new PointToAprilTag(hardwareMap, telemetry);
-        velocity = new Velocity(pointToAprilTag);
         detectArtifacts = new DetectArtifacts(colorSensor);
 
         telemetry.addLine("Initialized. Press PLAY to start.");
@@ -59,7 +53,6 @@ public class EWTeleOp extends LinearOpMode {
 
         waitForStart();
 
-        boolean readyToShoot = false;
         shooter.setPower(shooterSpeed);
 
         for (DcMotor m : new DcMotor[]{leftFront, leftRear, rightFront, rightRear}) {
@@ -70,15 +63,16 @@ public class EWTeleOp extends LinearOpMode {
         while (opModeIsActive()) {
 
             // --- Adjust shooter speed with bumpers/triggers (edge detection) ---
-            if (gamepad1.left_bumper && !leftBumperPrev) {
+            if (gamepad1.dpad_up && !dpadUp) {
                 shooterSpeed += 0.05;
             }
-            if (gamepad1.left_trigger > 0.5 && !leftTriggerPrev) {
+            if (gamepad1.dpad_down && !dpadDown) {
                 shooterSpeed -= 0.05;
             }
             shooterSpeed = Math.max(0, Math.min(shooterSpeed, 1));
-            leftBumperPrev = gamepad1.left_bumper;
-            leftTriggerPrev = gamepad1.left_trigger > 0.5;
+            dpadUp = gamepad1.dpad_up;
+            dpadDown = gamepad1.dpad_down;
+
             shooter.setPower(shooterSpeed);
 
             // --- Driving ---
@@ -88,22 +82,32 @@ public class EWTeleOp extends LinearOpMode {
             intake.setPower(1);
 
             // --- Shooting logic ---
-            String detected = detectArtifacts.getColor();
-            if (readyToShoot || gamepad1.right_bumper) {
+            if (gamepad1.right_trigger > 0.5){
+                shooter.setPower(0.7);
+                while (shooter.getPower() != 0.7){
+
+                }
+                sleep(250);
                 shoot();
                 telemetry.addLine("Shooting");
-                readyToShoot = false;
+            }
+            if (gamepad1.left_trigger > 0.5){
+                shooter.setPower(1);
+                while (shooter.getPower() != 1){
+
+                }
+                sleep(250);
+                shoot();
+                telemetry.addLine("Shooting");
+            }
+
+            String detected = detectArtifacts.getColor();
+            if (gamepad1.right_bumper) {
+                shoot();
+                telemetry.addLine("Shooting");
             } else {
                 shooterServo.setPosition(0.65);
                 gateServo.setPosition(0);
-            }
-
-            // --- AprilTag updates and aiming ---
-            pointToAprilTag.updateTagDistance();
-            if (gamepad1.right_trigger > 0.5) {
-                pointToAprilTag.turnToTag(leftFront, leftRear, rightFront, rightRear);
-                shooter.setPower(velocity.getSpeed(hardwareMap, telemetry));
-                readyToShoot = true;
             }
 
             // --- Telemetry ---

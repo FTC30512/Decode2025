@@ -26,7 +26,7 @@ public class Movement {
         double rx = gamepad.right_stick_x;
 
         // Reset heading button (options)
-        if (gamepad.options) {
+        if (gamepad.left_bumper) {
             imu.resetYaw();
         }
 
