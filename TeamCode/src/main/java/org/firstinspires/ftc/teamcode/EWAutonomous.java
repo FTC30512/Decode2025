@@ -74,8 +74,8 @@ public class EWAutonomous extends LinearOpMode {
             shoot();
             sleep(400);
             shoot();
-            Turn_By_Gyro(15, 25, 25);
-            straightInches(30, 50);
+            Turn_By_Gyro(45, 25, 25);
+            straightInches(20, 50);
         }
     }
 
@@ -276,11 +276,12 @@ public class EWAutonomous extends LinearOpMode {
     public void Turn_By_Gyro (double targetYaw, double leftPowerpct, double rightPowerpct){
         targetYaw = -targetYaw;
         double currentYaw = getHeading(); // Replace with IMU reading
-        double error = targetYaw - currentYaw;
-        double correction = 0.5 * error;
+        double actTargetYaw = currentYaw + targetYaw;
+        //double error = targetYaw - currentYaw;
+        //double correction = 0.5 * error;
 
         double kP = 0.05; // Optional: use for fine-tuned correction
-        boolean turnClockwise = currentYaw < targetYaw;
+        boolean turnClockwise = currentYaw < actTargetYaw;
 
         double leftPower = leftPowerpct / 100.0;
         double rightPower = rightPowerpct/ 100.0;
@@ -288,18 +289,31 @@ public class EWAutonomous extends LinearOpMode {
         if (turnClockwise) {
             leftPower = -Math.abs(leftPower);
             rightPower = Math.abs(rightPower);
-            while (getHeading() < targetYaw) {
+            while (getHeading() < actTargetYaw) {
+                telemetry.addLine("Current Heading angle" + getHeading());
+                telemetry.addLine( "Target Angle" + targetYaw);
+                telemetry.addLine("Actual Target Yaw" + actTargetYaw);
+                //telemetry.addLine("Current Heading angle" + getHeading() + "Target Angle" + targetYaw + "Actual Target Yaw" + actTargetYaw);
+                telemetry.update();
                 setDrivePower(leftPower, leftPower, rightPower, rightPower);
             }
         } else {
             leftPower = Math.abs(leftPower);
             rightPower = -Math.abs(rightPower);
-            while (getHeading() > targetYaw) {
+            while (getHeading() > actTargetYaw) {
+                telemetry.addLine("Current Heading angle" + getHeading());
+                telemetry.addLine( "Target Angle" + targetYaw);
+                telemetry.addLine("Actual Target Yaw" + actTargetYaw);
+                telemetry.update();
                 setDrivePower(leftPower, leftPower, rightPower, rightPower);
             }
         }
 
-        telemetry.addData("Turn", "Completed to %.2f degrees", targetYaw);
+        setDrivePower(0.0, 0.0, 0.0, 0.0);
+        telemetry.addLine("Current Heading angle" + getHeading());
+        telemetry.addLine( "Target Angle" + targetYaw);
+        telemetry.addLine("Actual Target Yaw" + actTargetYaw);
+        telemetry.addData("Turn", "Completed to %.2f degrees", actTargetYaw);
         telemetry.update();
     }
     public void shoot() {
