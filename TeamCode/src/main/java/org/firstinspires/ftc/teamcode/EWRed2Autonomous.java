@@ -14,8 +14,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 import org.firstinspires.ftc.vision.apriltag.AprilTagLibrary;
 
-@Autonomous(name = "EW Autonomous", group = "Autonomous")
-public class EWAutonomous extends LinearOpMode {
+@Autonomous
+public class EWRed2Autonomous extends LinearOpMode {
 
     // --- Servos ---
     private Servo gateServo, shooterServo;
@@ -65,17 +65,39 @@ public class EWAutonomous extends LinearOpMode {
         waitForStart();
 
         if (opModeIsActive()) {
+            /*
             intake.setPower(1);
             shooter.setPower(0.65);
-            straightInches(-45, 75); // move backward 50 inches
+            straightInches(95, 75); // move backward 50 inches
+            Turn_By_Gyro(45, 25, 25);
             sleep(200);
             shoot();
             sleep(400);
             shoot();
             sleep(400);
             shoot();
-            Turn_By_Gyro(45, 25, 25);
+            Turn_By_Gyro(-45, 25, 25);
             straightInches(20, 50);
+            */
+
+            intake.setPower(1);
+            shooter.setPower(1);
+            straightInches(15,75);
+            Turn_By_Gyro(20, 25, 25);
+            //shooter.setPower(0.65);
+            //straightInches(-45, 75); // move backward 50 inches
+            sleep(200);
+            shoot();
+            sleep(400);
+            shoot();
+            sleep(400);
+            shoot();
+            //Turn_By_Gyro(-45, 25, 25);
+            //straightInches(20, 50);
+            straightInches(20, 75);
+            Turn_By_Gyro(70, 25,25);
+            shooter.setPower(0);
+            intake.setPower(0);
         }
     }
 
