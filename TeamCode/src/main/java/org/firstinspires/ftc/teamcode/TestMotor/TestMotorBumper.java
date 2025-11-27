@@ -29,6 +29,11 @@ public class TestMotorBumper extends LinearOpMode {
                     sleep(200);
                 }
             }
+
+            if (gamepad1.right_trigger>0.5){
+                testMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+            }
+
             testMotor.setPower(speed);
             telemetry.addData("Speed", speed);
             telemetry.update();

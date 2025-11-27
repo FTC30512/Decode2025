@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.TestMotor;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 @TeleOp
 public class TestMotorJoystick extends LinearOpMode {
@@ -17,6 +18,9 @@ public class TestMotorJoystick extends LinearOpMode {
             double speed = -gamepad1.left_stick_y;
             if (Math.abs(gamepad1.left_stick_y) <= 1) {
                 testMotor.setPower(speed);
+            }
+            if (gamepad1.right_trigger>0.5){
+                testMotor.setDirection(DcMotorSimple.Direction.REVERSE);
             }
         }
     }

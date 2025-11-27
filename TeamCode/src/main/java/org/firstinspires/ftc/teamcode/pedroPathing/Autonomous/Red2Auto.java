@@ -10,22 +10,29 @@ import com.pedropathing.paths.PathChain;
 import com.pedropathing.paths.PathConstraints;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
 @Autonomous(name = "Red2Auto")
 public class Red2Auto extends OpMode {
+
     public static PathConstraints pathConstraints = new PathConstraints
             (0.3, 100, 4, 5);
 
     public Follower follower;
     private int pathState;
 
-    private final Pose startPose = new Pose(144-49, 8, Math.toRadians(90));
+    private final Pose startPose = new Pose(95, 8, Math.toRadians(90));
+    private final Pose shootPose = new Pose(87.571, 12.319, Math.toRadians(60));
 
-    private final Pose shootPose = new Pose(144-61.429, 12.319, Math.toRadians(60));
-
-    // Path variables
-    public PathChain Path1, Path2, Path3, Path4, Path5, Path6, Path7, Path8;
+    public PathChain pathShoot1;
+    public PathChain pathToFirstRow;
+    public PathChain pathBackFirstRow;
+    public PathChain pathShoot3;
+    public PathChain pathToSecondRow;
+    public PathChain pathBackSecondRow;
+    public PathChain pathShoot2;
+    public PathChain pathExit;
 
     @Override
     public void init() {
@@ -44,7 +51,7 @@ public class Red2Auto extends OpMode {
 
     @Override
     public void start() {
-        follower.followPath(Path1); //Start pose to shoot
+        follower.followPath(pathShoot1);
         pathState = 2;
     }
 
@@ -62,59 +69,59 @@ public class Red2Auto extends OpMode {
 
     public void buildPaths() {
 
-        Path1 = follower.pathBuilder()
+        pathShoot1 = follower.pathBuilder()
                 .setConstraints(pathConstraints)
                 .addPath(new BezierLine(startPose, shootPose))
                 .setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(60))
                 .build();
 
-        Path2 = follower.pathBuilder()
+        pathToFirstRow = follower.pathBuilder()
                 .setConstraints(pathConstraints)
-                .addPath(new BezierLine(shootPose, new Pose(144-43.949, 35.292)))
-                .setLinearHeadingInterpolation(Math.toRadians(60), Math.toRadians(0))
-                .build();
-
-        Path3 = follower.pathBuilder()
-                .setConstraints(pathConstraints)
-                .addPath(new BezierLine(new Pose(144-43.949, 35.292), new Pose(144-12.822, 35.292)))
-                .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
-                .build();
-
-        Path4 = follower.pathBuilder()
-                .setConstraints(pathConstraints)
-                .addPath(new BezierCurve(
-                        new Pose(144-12.822, 35.958),
-                        new Pose(144-20.310, 16.314),
-                        shootPose
-                ))
-                .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(60))
-                .build();
-
-        Path5 = follower.pathBuilder()
-                .setConstraints(pathConstraints)
-                .addPath(new BezierLine(shootPose, new Pose(144-46.451, 55.598)))
+                .addPath(new BezierLine(shootPose, new Pose(100.051, 35.292)))
                 .setLinearHeadingInterpolation(Math.toRadians(60), Math.toRadians(180))
                 .build();
 
-        Path6 = follower.pathBuilder()
+        pathBackFirstRow = follower.pathBuilder()
                 .setConstraints(pathConstraints)
-                .addPath(new BezierLine(new Pose(144-46.451, 55.598), new Pose(144-17.313, 55.598)))
+                .addPath(new BezierLine(new Pose(100.051, 35.292), new Pose(131.178, 35.292)))
                 .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
                 .build();
 
-        Path7 = follower.pathBuilder()
+        pathShoot3 = follower.pathBuilder()
                 .setConstraints(pathConstraints)
                 .addPath(new BezierCurve(
-                        new Pose(144-17.313, 55.598),
-                        new Pose(144-32.296, 19.810),
+                        new Pose(131.178, 35.958),
+                        new Pose(123.69, 16.314),
                         shootPose
                 ))
                 .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(60))
                 .build();
 
-        Path8 = follower.pathBuilder()
+        pathToSecondRow = follower.pathBuilder()
                 .setConstraints(pathConstraints)
-                .addPath(new BezierLine(shootPose, new Pose(144-32.795, 12.985)))
+                .addPath(new BezierLine(shootPose, new Pose(97.549, 58.598)))
+                .setLinearHeadingInterpolation(Math.toRadians(60), Math.toRadians(180))
+                .build();
+
+        pathBackSecondRow = follower.pathBuilder()
+                .setConstraints(pathConstraints)
+                .addPath(new BezierLine(new Pose(97.549, 58), new Pose(126.687, 58.598)))
+                .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
+                .build();
+
+        pathShoot2 = follower.pathBuilder()
+                .setConstraints(pathConstraints)
+                .addPath(new BezierCurve(
+                        new Pose(126.687, 58.598),
+                        new Pose(86.5664739884393, 61.928323699421966),
+                        shootPose
+                ))
+                .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(60))
+                .build();
+
+        pathExit = follower.pathBuilder()
+                .setConstraints(pathConstraints)
+                .addPath(new BezierLine(shootPose, new Pose(111.205, 12.985)))
                 .setLinearHeadingInterpolation(Math.toRadians(60), Math.toRadians(0))
                 .build();
     }
@@ -126,100 +133,101 @@ public class Red2Auto extends OpMode {
 
         switch (pathState) {
 
-            case 2: // Go to first row
+            case 2:
                 if (!follower.isBusy() && !waiting) {
                     waitStart = System.currentTimeMillis();
                     waiting = true;
                 }
-                if (waiting && System.currentTimeMillis() - waitStart >= 500) { // 1 second pause
-                    follower.followPath(Path2);
+                if (waiting && System.currentTimeMillis() - waitStart >= 500) {
+                    follower.followPath(pathToSecondRow);
                     pathState = 3;
                     waiting = false;
                 }
                 break;
 
-            case 3: //Back up into first row
+            case 3:
                 if (!follower.isBusy() && !waiting) {
                     waitStart = System.currentTimeMillis();
                     waiting = true;
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 500) {
-                    follower.followPath(Path3);
+                    follower.followPath(pathBackSecondRow);
                     pathState = 4;
                     waiting = false;
                 }
                 break;
 
-            case 4: //Go to shoot
+            case 4:
                 if (!follower.isBusy() && !waiting) {
                     waitStart = System.currentTimeMillis();
                     waiting = true;
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 500) {
-                    follower.followPath(Path4);
+                    follower.followPath(pathShoot2);
                     pathState = 5;
                     waiting = false;
                 }
                 break;
 
-            case 5: //Go up to second row
+            case 5:
                 if (!follower.isBusy() && !waiting) {
                     waitStart = System.currentTimeMillis();
                     waiting = true;
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 500) {
-                    follower.followPath(Path5);
+                    follower.followPath(pathToFirstRow);
                     pathState = 6;
                     waiting = false;
                 }
                 break;
 
-            case 6: //Back up into second row
+            case 6:
                 if (!follower.isBusy() && !waiting) {
                     waitStart = System.currentTimeMillis();
                     waiting = true;
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 500) {
-                    follower.followPath(Path6);
+                    follower.followPath(pathBackFirstRow);
                     pathState = 7;
                     waiting = false;
                 }
                 break;
 
-            case 7: //Go to shoot
+            case 7:
                 if (!follower.isBusy() && !waiting) {
                     waitStart = System.currentTimeMillis();
                     waiting = true;
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 500) {
-                    follower.followPath(Path7);
+                    follower.followPath(pathShoot3);
                     pathState = 8;
                     waiting = false;
                 }
                 break;
 
-            case 8: //Leave base
+            case 8:
                 if (!follower.isBusy() && !waiting) {
                     waitStart = System.currentTimeMillis();
                     waiting = true;
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 500) {
-                    follower.followPath(Path8);
+                    follower.followPath(pathExit);
                     pathState = 9;
                     waiting = false;
                 }
                 break;
 
-            case 9: //Done
+            case 9:
                 if (!follower.isBusy() && !waiting) {
                     waitStart = System.currentTimeMillis();
                     waiting = true;
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 500) {
-                    pathState = 10; // DONE
+                    pathState = 10;
                     waiting = false;
                 }
                 break;
         }
     }
+
 }
