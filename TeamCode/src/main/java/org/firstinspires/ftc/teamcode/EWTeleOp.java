@@ -169,5 +169,4 @@ public class EWTeleOp extends LinearOpMode {
         gateServo.setPosition(0);
         sleep(200);
     }
-    
 }
