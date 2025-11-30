@@ -1,0 +1,149 @@
+package org.firstinspires.ftc.teamcode;
+
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.ColorSensor;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.IMU;
+import com.qualcomm.robotcore.hardware.Servo;
+
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+
+import org.firstinspires.ftc.vision.apriltag.AprilTagLibrary;
+
+@TeleOp(name = "EW TeleOp", group = "Main")
+public class EWTeleOp extends LinearOpMode {
+
+    // --- Servos ---
+    private Servo gateServo, shooterServo;
+
+    // --- Motors ---
+    private DcMotor leftFront, leftRear, rightFront, rightRear;
+    private DcMotor intake, shooter;
+
+    // --- Sensors ---
+    private ColorSensor colorSensor;
+    private IMU imu;
+
+    // --- Helper Classes ---
+    private Movement movement;
+
+    // --- Shooter Control ---
+
+    @Override
+    public void runOpMode() {
+
+        // --- Initialize hardware ---
+        initHardware();
+
+        // --- Initialize helpers ---
+        movement = new Movement(leftFront, leftRear, rightFront, rightRear, gamepad1, imu);
+
+        telemetry.addLine("Initialized. Press PLAY to start.");
+        telemetry.update();
+        gamepad1.rumble(500);
+
+        waitForStart();
+
+        intake.setDirection(DcMotorSimple.Direction.REVERSE);
+
+        for (DcMotor m : new DcMotor[]{leftFront, leftRear, rightFront, rightRear}) {
+            m.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        }
+
+        // --- Main loop ---
+        while (opModeIsActive()) {
+
+            // --- Driving ---
+            movement.drive();
+
+            // --- Intake ---
+            intake.setPower(1);
+
+            // --- Shooting logic ---
+            if (gamepad1.right_trigger > 0.5){
+                shooter.setPower(0.85);
+                while (shooter.getPower() != 0.85){
+
+                }
+                sleep(250);
+                shoot();
+                telemetry.addLine("Shooting");
+            }
+            if (gamepad1.left_trigger > 0.5){
+                shooter.setPower(1);
+                while (shooter.getPower() != 1){
+
+                }
+                sleep(250);
+                shoot();
+                telemetry.addLine("Shooting");
+            }
+
+            if (gamepad1.right_bumper) {
+                shoot();
+                telemetry.addLine("Shooting");
+            } else {
+                shooterServo.setPosition(0);
+                gateServo.setPosition(0);
+            }
+
+            // --- Telemetry ---
+            telemetry.addData("Shooter Servo Position", shooterServo.getPosition());
+            telemetry.addData("Shooter Power", shooter.getPower());
+            telemetry.update();
+        }
+    }
+
+    // --- Hardware initialization method ---
+    private void initHardware() {
+        // Motors
+        leftFront = hardwareMap.dcMotor.get("leftFront");
+        leftRear = hardwareMap.dcMotor.get("leftRear");
+        rightFront = hardwareMap.dcMotor.get("rightFront");
+        rightRear = hardwareMap.dcMotor.get("rightRear");
+        intake = hardwareMap.dcMotor.get("Intake");
+        shooter = hardwareMap.dcMotor.get("Shooter");
+
+        leftFront.setDirection(DcMotor.Direction.REVERSE);
+        leftRear.setDirection(DcMotor.Direction.REVERSE);
+        shooter.setDirection(DcMotorSimple.Direction.REVERSE);
+
+        // Servos
+        shooterServo = hardwareMap.servo.get("shooterServo");
+        gateServo = hardwareMap.servo.get("gateServo");
+        gateServo.setDirection(Servo.Direction.REVERSE);
+        shooterServo.setDirection(Servo.Direction.REVERSE);
+
+        // Sensors
+        imu = hardwareMap.get(IMU.class, "imu");
+
+        IMU.Parameters parameters = new IMU.Parameters(
+                new RevHubOrientationOnRobot(
+                        RevHubOrientationOnRobot.LogoFacingDirection.FORWARD,
+                        RevHubOrientationOnRobot.UsbFacingDirection.LEFT
+                )
+        );
+        imu.initialize(parameters);
+
+        AprilTagLibrary aprilTagLibrary = new AprilTagLibrary.Builder()
+                .addTag(20, "Blue Target", 6.5, DistanceUnit.INCH)
+                .addTag(24, "Red Target", 6.5, DistanceUnit.INCH)
+                .addTag(22, "Motif Pattern", 6.5, DistanceUnit.INCH)
+                .build();
+    }
+
+    // --- Shooting method ---
+    public void shoot() {
+        gateServo.setPosition(0.3);
+        sleep(100);
+        shooterServo.setPosition(0.35);
+        sleep(250);
+        shooterServo.setPosition(0);
+        sleep(175);
+        gateServo.setPosition(0);
+        sleep(10);
+    }
+}

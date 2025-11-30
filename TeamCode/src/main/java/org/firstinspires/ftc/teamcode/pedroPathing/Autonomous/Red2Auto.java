@@ -9,18 +9,23 @@ import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
 import com.pedropathing.paths.PathConstraints;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
 @Autonomous(name = "Red2Auto")
-public class Red2Auto extends OpMode {
+public class Red2Auto extends LinearOpMode {
 
-    public static PathConstraints pathConstraints = new PathConstraints
-            (0.3, 100, 4, 5);
+    public static PathConstraints pathConstraints = new PathConstraints(0.3, 100, 4, 5);
 
     public Follower follower;
     private int pathState;
+
+    Servo shooterServo, gateServo;
+    DcMotor intake, shooter;
 
     private final Pose startPose = new Pose(95, 8, Math.toRadians(90));
     private final Pose shootPose = new Pose(87.571, 12.319, Math.toRadians(60));
@@ -34,10 +39,19 @@ public class Red2Auto extends OpMode {
     public PathChain pathShoot2;
     public PathChain pathExit;
 
+    long waitStart = 0;
+    boolean waiting = false;
+
     @Override
-    public void init() {
+    public void runOpMode() throws InterruptedException {
 
         TelemetryManager panelsTelemetry = PanelsTelemetry.INSTANCE.getTelemetry();
+
+        shooterServo = hardwareMap.get(Servo.class, "shooterServo");
+        gateServo = hardwareMap.get(Servo.class, "gateServo");
+        intake = hardwareMap.get(DcMotor.class, "Intake");
+        shooter = hardwareMap.get(DcMotor.class, "Shooter");
+        intake.setDirection(DcMotorSimple.Direction.REVERSE);
 
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(startPose);
@@ -47,24 +61,26 @@ public class Red2Auto extends OpMode {
 
         panelsTelemetry.debug("Status", "Initialized");
         panelsTelemetry.update(telemetry);
-    }
 
-    @Override
-    public void start() {
-        follower.followPath(pathShoot1);
-        pathState = 2;
-    }
+        waitForStart();
+        if (isStopRequested()) return;
 
-    @Override
-    public void loop() {
-        follower.update();
-        autonomousPathUpdate();
+        intake.setPower(0.7);
+        shooter.setPower(1);
 
-        telemetry.addData("path state", pathState);
-        telemetry.addData("x", follower.getPose().getX());
-        telemetry.addData("y", follower.getPose().getY());
-        telemetry.addData("heading", follower.getPose().getHeading());
-        telemetry.update();
+        waitStart = 0;
+        waiting = false;
+
+        while (opModeIsActive()) {
+            follower.update();
+            autonomousPathUpdate();
+
+            telemetry.addData("path state", pathState);
+            telemetry.addData("x", follower.getPose().getX());
+            telemetry.addData("y", follower.getPose().getY());
+            telemetry.addData("heading", follower.getPose().getHeading());
+            telemetry.update();
+        }
     }
 
     public void buildPaths() {
@@ -126,108 +142,78 @@ public class Red2Auto extends OpMode {
                 .build();
     }
 
-    long waitStart = 0;
-    boolean waiting = false;
-
-    public void autonomousPathUpdate() {
+    public void autonomousPathUpdate(){
 
         switch (pathState) {
 
+            case 1:
+                follower.followPath(pathShoot1);
+                sleep(500);
+                shoot();
+                pathState = 2;
+                break;
+
             case 2:
-                if (!follower.isBusy() && !waiting) {
-                    waitStart = System.currentTimeMillis();
-                    waiting = true;
-                }
-                if (waiting && System.currentTimeMillis() - waitStart >= 500) {
-                    follower.followPath(pathToSecondRow);
-                    pathState = 3;
-                    waiting = false;
-                }
+                follower.followPath(pathToSecondRow);
+                sleep(500);
+                pathState = 3;
                 break;
 
             case 3:
-                if (!follower.isBusy() && !waiting) {
-                    waitStart = System.currentTimeMillis();
-                    waiting = true;
-                }
-                if (waiting && System.currentTimeMillis() - waitStart >= 500) {
-                    follower.followPath(pathBackSecondRow);
-                    pathState = 4;
-                    waiting = false;
-                }
+                follower.followPath(pathBackSecondRow);
+                sleep(500);
+                pathState = 4;
                 break;
 
             case 4:
-                if (!follower.isBusy() && !waiting) {
-                    waitStart = System.currentTimeMillis();
-                    waiting = true;
-                }
-                if (waiting && System.currentTimeMillis() - waitStart >= 500) {
-                    follower.followPath(pathShoot2);
-                    pathState = 5;
-                    waiting = false;
-                }
+                follower.followPath(pathShoot2);
+                sleep(500);
+                shoot();
+                pathState = 5;
                 break;
 
             case 5:
-                if (!follower.isBusy() && !waiting) {
-                    waitStart = System.currentTimeMillis();
-                    waiting = true;
-                }
-                if (waiting && System.currentTimeMillis() - waitStart >= 500) {
-                    follower.followPath(pathToFirstRow);
-                    pathState = 6;
-                    waiting = false;
-                }
+                follower.followPath(pathToFirstRow);
+                sleep(500);
+                pathState = 6;
                 break;
 
             case 6:
-                if (!follower.isBusy() && !waiting) {
-                    waitStart = System.currentTimeMillis();
-                    waiting = true;
-                }
-                if (waiting && System.currentTimeMillis() - waitStart >= 500) {
-                    follower.followPath(pathBackFirstRow);
-                    pathState = 7;
-                    waiting = false;
-                }
+                follower.followPath(pathBackFirstRow);
+                sleep(500);
+                pathState = 7;
                 break;
 
             case 7:
-                if (!follower.isBusy() && !waiting) {
-                    waitStart = System.currentTimeMillis();
-                    waiting = true;
-                }
-                if (waiting && System.currentTimeMillis() - waitStart >= 500) {
-                    follower.followPath(pathShoot3);
-                    pathState = 8;
-                    waiting = false;
-                }
+                follower.followPath(pathShoot3);
+                sleep(500);
+                shoot();
+                pathState = 8;
                 break;
 
             case 8:
-                if (!follower.isBusy() && !waiting) {
-                    waitStart = System.currentTimeMillis();
-                    waiting = true;
-                }
-                if (waiting && System.currentTimeMillis() - waitStart >= 500) {
-                    follower.followPath(pathExit);
-                    pathState = 9;
-                    waiting = false;
-                }
+                follower.followPath(pathExit);
+                sleep(500);
+                pathState = 9;
                 break;
 
             case 9:
-                if (!follower.isBusy() && !waiting) {
-                    waitStart = System.currentTimeMillis();
-                    waiting = true;
-                }
-                if (waiting && System.currentTimeMillis() - waitStart >= 500) {
-                    pathState = 10;
-                    waiting = false;
-                }
+                pathState = 10;
+                shooter.setPower(0);
+                intake.setPower(0);
                 break;
         }
     }
 
+    // --- Shooting method ---
+    public void shoot() {
+        gateServo.setPosition(0.3);
+        sleep(100);
+        shooterServo.setPosition(0.35);
+        sleep(250);
+        shooterServo.setPosition(0);
+        sleep(175);
+        gateServo.setPosition(0);
+        sleep(10);
+    }
 }
