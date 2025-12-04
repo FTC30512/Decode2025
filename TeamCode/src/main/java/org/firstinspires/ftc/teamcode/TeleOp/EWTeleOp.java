@@ -1,9 +1,8 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.TeleOp;
 
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.IMU;
@@ -11,6 +10,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
+import org.firstinspires.ftc.teamcode.TeleOp.HelperTeleOp.Movement;
 import org.firstinspires.ftc.vision.apriltag.AprilTagLibrary;
 
 @TeleOp(name = "EW TeleOp", group = "Main")
@@ -24,13 +24,16 @@ public class EWTeleOp extends LinearOpMode {
     private DcMotor intake, shooter;
 
     // --- Sensors ---
-    private ColorSensor colorSensor;
     private IMU imu;
 
     // --- Helper Classes ---
     private Movement movement;
 
     // --- Shooter Control ---
+    private double shooterSpeed = 0.7;
+    private boolean dpadUp = false;
+    private boolean dpadDown = false;
+
 
     @Override
     public void runOpMode() {
@@ -62,6 +65,9 @@ public class EWTeleOp extends LinearOpMode {
             // --- Intake ---
             intake.setPower(1);
 
+            // ---Shooter---
+            shooter.setPower(1);
+
             // --- Shooting logic ---
             if (gamepad1.right_trigger > 0.5){
                 shooter.setPower(0.85);
@@ -82,12 +88,32 @@ public class EWTeleOp extends LinearOpMode {
                 telemetry.addLine("Shooting");
             }
 
-            if (gamepad1.right_bumper) {
+            if (gamepad1.dpad_up && !dpadUp) {
+                shooterSpeed += 0.05;
+            }
+            if (gamepad1.dpad_down && !dpadDown) {
+                shooterSpeed -= 0.05;
+            }
+            shooterSpeed = Math.max(0, Math.min(shooterSpeed, 1));
+            dpadUp = gamepad1.dpad_up;
+            dpadDown = gamepad1.dpad_down;
+
+            shooter.setPower(shooterSpeed);
+
+            if (gamepad1.x) {
                 shoot();
                 telemetry.addLine("Shooting");
             } else {
                 shooterServo.setPosition(0);
                 gateServo.setPosition(0);
+            }
+
+            if (gamepad1.left_bumper){
+                intake.setPower(-1);
+            } else if (gamepad1.right_bumper) {
+                intake.setPower(1);
+            }else {
+                intake.setPower(intake.getPower());
             }
 
             // --- Telemetry ---
@@ -122,7 +148,7 @@ public class EWTeleOp extends LinearOpMode {
 
         IMU.Parameters parameters = new IMU.Parameters(
                 new RevHubOrientationOnRobot(
-                        RevHubOrientationOnRobot.LogoFacingDirection.FORWARD,
+                        RevHubOrientationOnRobot.LogoFacingDirection.UP,
                         RevHubOrientationOnRobot.UsbFacingDirection.LEFT
                 )
         );
@@ -137,6 +163,7 @@ public class EWTeleOp extends LinearOpMode {
 
     // --- Shooting method ---
     public void shoot() {
+        intake.setPower(0);
         gateServo.setPosition(0.3);
         sleep(100);
         shooterServo.setPosition(0.35);
@@ -144,6 +171,7 @@ public class EWTeleOp extends LinearOpMode {
         shooterServo.setPosition(0);
         sleep(175);
         gateServo.setPosition(0);
-        sleep(10);
+        sleep(100);
+        intake.setPower(1);
     }
 }
