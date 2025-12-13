@@ -59,6 +59,12 @@ public class EWTeleOp extends LinearOpMode {
         // --- Main loop ---
         while (opModeIsActive()) {
 
+            if (gamepad1.left_bumper){
+                intake.setPower(-1);
+            }else {
+                intake.setPower(1);
+            }
+
             // --- Driving ---
             movement.drive();
 
@@ -106,14 +112,6 @@ public class EWTeleOp extends LinearOpMode {
             } else {
                 shooterServo.setPosition(0);
                 gateServo.setPosition(0);
-            }
-
-            if (gamepad1.left_bumper){
-                intake.setPower(-1);
-            } else if (gamepad1.right_bumper) {
-                intake.setPower(1);
-            }else {
-                intake.setPower(intake.getPower());
             }
 
             // --- Telemetry ---
@@ -174,4 +172,15 @@ public class EWTeleOp extends LinearOpMode {
         sleep(100);
         intake.setPower(1);
     }
+
+//    public void shoot() {
+//        gateServo.setPosition(0.3);
+//        sleep(100);
+//        shooterServo.setPosition(0.45);
+//        sleep(250);
+//        shooterServo.setPosition(0);
+//        sleep(175);
+//        gateServo.setPosition(0);
+//        sleep(100);
+//    }
 }

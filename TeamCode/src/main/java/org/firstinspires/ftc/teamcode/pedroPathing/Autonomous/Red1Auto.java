@@ -13,7 +13,6 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
-@Autonomous
 public class Red1Auto extends OpMode {
 
     public static PathConstraints pathConstraints = new PathConstraints(0.3, 100, 4, 5);

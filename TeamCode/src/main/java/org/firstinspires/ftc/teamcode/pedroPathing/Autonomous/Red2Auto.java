@@ -18,7 +18,6 @@ import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
-@Autonomous(name = "Red2Auto")
 public class Red2Auto extends OpMode {
 
     public static PathConstraints pathConstraints = new PathConstraints(0.3, 100, 4, 5);
