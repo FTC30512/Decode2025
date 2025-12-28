@@ -30,7 +30,7 @@ public class testAuto extends OpMode {
 
     public Follower follower;
     private final Pose startPose = new Pose(56.500, 11.500, Math.toRadians(90));
-    private final Pose shootPose = new Pose(58.000, 19.000, Math.toRadians(125));
+    private final Pose shootPose = new Pose(58.000, 19.000, Math.toRadians(115));
     private final Pose firstRowStartPose = new Pose(44.000, 84.000, Math.toRadians(0));
     private final Pose firstRowEndPose = new Pose(22.000, 84.000, Math.toRadians(0));
     private final Pose secondRowStartPose = new Pose(44.000, 60.000, Math.toRadians(0));
@@ -123,7 +123,7 @@ public class testAuto extends OpMode {
         telemetry.addData("path state", pathState);
         telemetry.addData("x", follower.getPose().getX());
         telemetry.addData("y", follower.getPose().getY());
-        telemetry.addData("heading", follower.getPose().getHeading());
+        telemetry.addData("heading", Math.toDegrees(follower.getPose().getHeading()));
         telemetry.addData("Max Power", follower.getMaxPowerScaling());
         telemetry.update();
     }
@@ -135,6 +135,7 @@ public class testAuto extends OpMode {
                 .addPath(
                         new BezierLine(startPose, shootPose)
                 )
+                .setHeadingConstraint(0.0001)
                 .setLinearHeadingInterpolation(startPose.getHeading(), shootPose.getHeading())
                 .build();
 
@@ -168,6 +169,7 @@ public class testAuto extends OpMode {
                                 shootPose
                         )
                 )
+                .setHeadingConstraint(0.0001)
                 .setLinearHeadingInterpolation(secondRowEndPose.getHeading(), shootPose.getHeading())
                 .build();
 
@@ -190,7 +192,7 @@ public class testAuto extends OpMode {
                     waiting = true;
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 500) {
-                    follower.followPath(pathStarttoShoot);
+                    follower.followPath(pathStarttoShoot, 0.8, true);
                     pathState = PathState.SHOOT;
                     waiting = false;
                 }
@@ -227,7 +229,7 @@ public class testAuto extends OpMode {
                     waiting = true;
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 500) {
-                    follower.followPath(pathSecondtoShoot);
+                    follower.followPath(pathSecondtoShoot, 0.8, true);
                     pathState = PathState.SHOOT;
                     waiting = false;
                 }
@@ -246,7 +248,7 @@ public class testAuto extends OpMode {
                 if (!follower.isBusy() && !waiting) {
                     waitStart = System.currentTimeMillis();
                     waiting = true;
-                    follower.breakFollowing();
+                    //follower.breakFollowing();
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 500) {
                     sleep(500);
