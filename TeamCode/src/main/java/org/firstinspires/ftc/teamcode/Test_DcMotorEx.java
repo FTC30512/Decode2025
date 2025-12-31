@@ -5,7 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
-
+//---Shooter Test Code---
 @TeleOp(name = "ShooterTest", group = "Main")
 public class Test_DcMotorEx extends LinearOpMode {
 
