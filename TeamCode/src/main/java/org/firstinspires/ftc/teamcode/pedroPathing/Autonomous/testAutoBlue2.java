@@ -18,6 +18,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
 @Autonomous(name = "testAutoBlue2", group = "Autonomous")
@@ -57,7 +58,7 @@ public class testAutoBlue2 extends OpMode {
     private Servo gateServo, shooterServo;
     private DcMotor intake;
     private DcMotorEx shooter;
-    private int shooterSpeed = 2450;
+    private int shooterSpeed = 2300;
     private double Kp = 25.0, Ki = 3.0, Kd = 0.0, Kf = 2.8;
     private IMU imu;
     boolean belly, firstrow, secondrow, thirdrow = false;
@@ -122,6 +123,9 @@ public class testAutoBlue2 extends OpMode {
         telemetry.addData("path state", pathState);
         telemetry.addData("x", follower.getPose().getX());
         telemetry.addData("y", follower.getPose().getY());
+        telemetry.addData("is Busy ", follower.isBusy());
+        telemetry.addData("is Turning ", follower.isTurning());
+        telemetry.addData("shooter velocity ", shooter.getVelocity());
         telemetry.addData("heading", Math.toDegrees(follower.getPose().getHeading()));
         telemetry.addData("Max Power", follower.getMaxPowerScaling());
         telemetry.update();
@@ -193,6 +197,7 @@ public class testAutoBlue2 extends OpMode {
                 .addPath(
                         new BezierLine(thirdRowEndPose, shootPose)
                 )
+                .setHeadingConstraint(0.0001)
                 .setLinearHeadingInterpolation(thirdRowEndPose.getHeading(), shootPose.getHeading())
                 .build();
 
@@ -296,7 +301,7 @@ public class testAutoBlue2 extends OpMode {
                     waiting = true;
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 500) {
-                    follower.followPath(pathThirdtoShoot);
+                    follower.followPath(pathThirdtoShoot, 0.7, false);
                     pathState = PathState.SHOOT;
                     waiting = false;
                 }
@@ -315,8 +320,23 @@ public class testAutoBlue2 extends OpMode {
                 break;
             case SHOOT:
                 if (!follower.isBusy() && !waiting) {
-                    waitStart = System.currentTimeMillis();
-                    waiting = true;
+                    /*
+                    if (follower.getPose().getHeading() > shootPose.getHeading() + Math.toRadians(2) ||
+                            follower.getPose().getHeading() < shootPose.getHeading() - Math.toRadians(2) ){
+                        double amount_of_turn = follower.getPose().getHeading() - shootPose.getHeading();
+                        boolean isLeft = false;
+                        if(amount_of_turn < 0)
+                        {
+                            isLeft = true;
+                            amount_of_turn = -1*amount_of_turn;
+                        }
+
+                        follower.turnDegrees(amount_of_turn, isLeft);
+                    }
+                    else{}
+                        */
+                        waitStart = System.currentTimeMillis();
+                        waiting = true;
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 500) {
                     //sleep(500);

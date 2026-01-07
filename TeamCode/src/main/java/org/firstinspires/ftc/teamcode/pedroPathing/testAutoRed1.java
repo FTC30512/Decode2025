@@ -50,7 +50,7 @@ public class testAutoRed1 extends OpMode {
         STOP
 
     }
-    org.firstinspires.ftc.teamcode.pedroPathing.Autonomous.testAutoBlue1.PathState pathState;
+    PathState pathState;
     public PathChain pathStarttoShoot, pathShoottoSecond, pathSecondCollect, pathSecondtoShoot, pathShoottoFirst, pathFirstCollect, pathFirsttoShoot, pathShoottoEnd;
     private Servo gateServo, shooterServo;
     private DcMotor intake;
@@ -71,7 +71,7 @@ public class testAutoRed1 extends OpMode {
         follower.setMaxPower(1.0);
 
         buildPaths();
-        pathState = org.firstinspires.ftc.teamcode.pedroPathing.Autonomous.testAutoBlue1.PathState.STARTPOS_SHOOTPOS;
+        pathState = PathState.STARTPOS_SHOOTPOS;
 
         imu.resetYaw();
         belly = true;
@@ -108,7 +108,7 @@ public class testAutoRed1 extends OpMode {
 
     @Override
     public void start() {
-        pathState = org.firstinspires.ftc.teamcode.pedroPathing.Autonomous.testAutoBlue1.PathState.STARTPOS_SHOOTPOS;
+        pathState = PathState.STARTPOS_SHOOTPOS;
         intake.setPower(1);
         shooter.setVelocity(shooterSpeed);
     }
@@ -222,7 +222,7 @@ public class testAutoRed1 extends OpMode {
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 500) {
                     follower.followPath(pathStarttoShoot);
-                    pathState = org.firstinspires.ftc.teamcode.pedroPathing.Autonomous.testAutoBlue1.PathState.SHOOT;
+                    pathState = PathState.SHOOT;
                     waiting = false;
                 }
                 break;
@@ -233,7 +233,7 @@ public class testAutoRed1 extends OpMode {
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 500) {
                     follower.followPath(pathShoottoSecond);
-                    pathState = org.firstinspires.ftc.teamcode.pedroPathing.Autonomous.testAutoBlue1.PathState.COLLECT_SECONDROW;
+                    pathState = PathState.COLLECT_SECONDROW;
                     waiting = false;
                     intake.setPower(1);
 
@@ -246,7 +246,7 @@ public class testAutoRed1 extends OpMode {
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 500) {
                     follower.followPath(pathSecondCollect, collectSpeed, true);
-                    pathState = org.firstinspires.ftc.teamcode.pedroPathing.Autonomous.testAutoBlue1.PathState.SECONDROW_SHOOTPOS;
+                    pathState = PathState.SECONDROW_SHOOTPOS;
                     secondrow = true;
                     waiting = false;
 
@@ -259,7 +259,7 @@ public class testAutoRed1 extends OpMode {
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 500) {
                     follower.followPath(pathSecondtoShoot);
-                    pathState = org.firstinspires.ftc.teamcode.pedroPathing.Autonomous.testAutoBlue1.PathState.SHOOT;
+                    pathState = PathState.SHOOT;
                     waiting = false;
                 }
                 break;
@@ -270,7 +270,7 @@ public class testAutoRed1 extends OpMode {
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 500) {
                     follower.followPath(pathShoottoFirst);
-                    pathState = org.firstinspires.ftc.teamcode.pedroPathing.Autonomous.testAutoBlue1.PathState.COLLECT_THIRDROW;
+                    pathState = PathState.COLLECT_THIRDROW;
                     waiting = false;
                     intake.setPower(1);
 
@@ -283,7 +283,7 @@ public class testAutoRed1 extends OpMode {
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 500) {
                     follower.followPath(pathFirstCollect, collectSpeed, false);
-                    pathState = org.firstinspires.ftc.teamcode.pedroPathing.Autonomous.testAutoBlue1.PathState.FIRSTROW_SHOOTPOS;
+                    pathState = PathState.FIRSTROW_SHOOTPOS;
                     firstrow = true;
                     waiting = false;
 
@@ -297,7 +297,7 @@ public class testAutoRed1 extends OpMode {
                 if (waiting && System.currentTimeMillis() - waitStart >= 500) {
                     follower.followPath(pathFirsttoShoot);
 
-                    pathState = org.firstinspires.ftc.teamcode.pedroPathing.Autonomous.testAutoBlue1.PathState.SHOOT;
+                    pathState = PathState.SHOOT;
                     waiting = false;
                 }
                 break;
@@ -309,7 +309,7 @@ public class testAutoRed1 extends OpMode {
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 500) {
                     follower.followPath(pathShoottoEnd);
-                    pathState = org.firstinspires.ftc.teamcode.pedroPathing.Autonomous.testAutoBlue1.PathState.STOP;
+                    pathState = PathState.STOP;
                     waiting = false;
                 }
                 break;
@@ -332,15 +332,15 @@ public class testAutoRed1 extends OpMode {
                     shoot();
                     follower.update();
                     if(belly){
-                        pathState = org.firstinspires.ftc.teamcode.pedroPathing.Autonomous.testAutoBlue1.PathState.SHOOTPOS_SECONDROW;
+                        pathState = PathState.SHOOTPOS_SECONDROW;
                         belly = false;
                     }
                     else if(secondrow) {
-                        pathState = org.firstinspires.ftc.teamcode.pedroPathing.Autonomous.testAutoBlue1.PathState.SHOOTPOS_FIRSTROW;
+                        pathState = PathState.SHOOTPOS_FIRSTROW;
                         secondrow = false;
                     }
                     else if(firstrow) {
-                        pathState = org.firstinspires.ftc.teamcode.pedroPathing.Autonomous.testAutoBlue1.PathState.SHOOTPOS_ENDPOSE;
+                        pathState =PathState.SHOOTPOS_ENDPOSE;
                         firstrow = false;
 
                     }

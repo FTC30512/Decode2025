@@ -26,17 +26,17 @@ public class testAutoBlue1 extends OpMode {
     //public static PathConstraints pathConstraints = new PathConstraints(0.3, 100, 4, 5);
 
     public Follower follower;
-    private final Pose startPose = new Pose(32.5, 136.5, Math.toRadians(90));
-    private final Pose shootPose = new Pose(50.000, 93.000, Math.toRadians(135));
-    private final Pose firstRowStartPose = new Pose(44.000, 84.000, Math.toRadians(0));
-    private final Pose firstRowEndPose = new Pose(25.000, 84.000, Math.toRadians(0));
-    private final Pose secondRowStartPose = new Pose(44.000, 60.000, Math.toRadians(0));
-    private final Pose secondRowEndPose = new Pose(22.000, 60.000, Math.toRadians(0));
+    private final Pose startPose = new Pose(56.5, 138.5, Math.toRadians(90));
+    private final Pose shootPose = new Pose(57.000, 86.000, Math.toRadians(135));
+    private final Pose firstRowStartPose = new Pose(44.000, 87.000, Math.toRadians(0));
+    private final Pose firstRowEndPose = new Pose(25.000, 87.000, Math.toRadians(0));
+    private final Pose secondRowStartPose = new Pose(44.000, 63.500, Math.toRadians(0));
+    private final Pose secondRowEndPose = new Pose(22.000, 63.500, Math.toRadians(0));
     private final Pose thirdRowStartPose = new Pose(44.000, 38.000, Math.toRadians(0));
     private final Pose thirdRowEndPose = new Pose(22.000, 38.000, Math.toRadians(0));
     private final Pose endPose = new Pose(48, 128, Math.toRadians(180));
     double collectSpeed = 0.3;
-    private enum PathState{
+    public enum PathState{
         STARTPOS_SHOOTPOS,
         SHOOTPOS_FIRSTROW,
         SHOOTPOS_SECONDROW,
@@ -165,7 +165,7 @@ public class testAutoBlue1 extends OpMode {
                 .addPath(
                         new BezierCurve(
                                 secondRowEndPose,
-                                new Pose(47.665, 48.268),
+                                new Pose(64, 63),
                                 shootPose
                         )
                 )
@@ -271,8 +271,8 @@ public class testAutoBlue1 extends OpMode {
                     waiting = true;
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 500) {
-                    follower.followPath(pathShoottoFirst);
-                    pathState = PathState.COLLECT_THIRDROW;
+                    follower.followPath(pathShoottoFirst, );
+                    pathState = PathState.COLLECT_FIRSTROW;
                     waiting = false;
                     intake.setPower(1);
 
@@ -297,7 +297,7 @@ public class testAutoBlue1 extends OpMode {
                     waiting = true;
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 500) {
-                    follower.followPath(pathFirsttoShoot);
+                    follower.followPath(pathFirsttoShoot, 0.5, false);
 
                     pathState = PathState.SHOOT;
                     waiting = false;
