@@ -13,35 +13,28 @@ import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorController;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DcMotorImplEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.IMU;
-import com.qualcomm.robotcore.hardware.PIDCoefficients;
-import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.hardware.configuration.typecontainers.MotorConfigurationType;
 
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
-@Autonomous(name = "Test Auto", group = "Autonomous")
-public class testAuto extends OpMode {
+@Autonomous(name = "testAutoBlue1", group = "Autonomous")
+public class testAutoBlue1 extends OpMode {
 
     //public static PathConstraints pathConstraints = new PathConstraints(0.3, 100, 4, 5);
 
     public Follower follower;
-    private final Pose startPose = new Pose(56.500, 11.500, Math.toRadians(90));
-    private final Pose shootPose = new Pose(58.000, 19.000, Math.toRadians(115));
+    private final Pose startPose = new Pose(32.5, 136.5, Math.toRadians(90));
+    private final Pose shootPose = new Pose(50.000, 93.000, Math.toRadians(135));
     private final Pose firstRowStartPose = new Pose(44.000, 84.000, Math.toRadians(0));
-    private final Pose firstRowEndPose = new Pose(22.000, 84.000, Math.toRadians(0));
+    private final Pose firstRowEndPose = new Pose(25.000, 84.000, Math.toRadians(0));
     private final Pose secondRowStartPose = new Pose(44.000, 60.000, Math.toRadians(0));
     private final Pose secondRowEndPose = new Pose(22.000, 60.000, Math.toRadians(0));
     private final Pose thirdRowStartPose = new Pose(44.000, 38.000, Math.toRadians(0));
     private final Pose thirdRowEndPose = new Pose(22.000, 38.000, Math.toRadians(0));
-    private final Pose endPose = new Pose(38.71408250355619, 33.5931721194879, Math.toRadians(180));
+    private final Pose endPose = new Pose(48, 128, Math.toRadians(180));
     double collectSpeed = 0.3;
     private enum PathState{
         STARTPOS_SHOOTPOS,
@@ -60,11 +53,12 @@ public class testAuto extends OpMode {
 
     }
     PathState pathState;
-    public PathChain pathStarttoShoot, pathShoottoSecond, pathSecondCollect, pathSecondtoShoot, pathShoottoThird, pathThirdCollect, pathThirdtoShoot, pathShoottoEnd;
+    public PathChain pathStarttoShoot, pathShoottoSecond, pathSecondCollect, pathSecondtoShoot, pathShoottoFirst, pathFirstCollect, pathFirsttoShoot, pathShoottoEnd;
     private Servo gateServo, shooterServo;
     private DcMotor intake;
     private DcMotorEx shooter;
-    private int shooterSpeed = 2450;
+    private int shooterSpeed = 2100;
+
     private double Kp = 25.0, Ki = 3.0, Kd = 0.0, Kf = 2.8;
     private IMU imu;
     boolean belly, firstrow, secondrow, thirdrow = false;
@@ -179,28 +173,28 @@ public class testAuto extends OpMode {
                 .setLinearHeadingInterpolation(secondRowEndPose.getHeading(), shootPose.getHeading())
                 .build();
 
-        pathShoottoThird = follower
+        pathShoottoFirst = follower
                 .pathBuilder()
                 .addPath(
-                        new BezierLine(shootPose, thirdRowStartPose)
+                        new BezierLine(shootPose, firstRowStartPose)
                 )
-                .setLinearHeadingInterpolation(shootPose.getHeading(), thirdRowStartPose.getHeading())
+                .setLinearHeadingInterpolation(shootPose.getHeading(), firstRowStartPose.getHeading())
                 .build();
 
-        pathThirdCollect = follower
+        pathFirstCollect = follower
                 .pathBuilder()
                 .addPath(
-                        new BezierLine(thirdRowStartPose, thirdRowEndPose)
+                        new BezierLine(firstRowStartPose, firstRowEndPose)
                 )
-                .setLinearHeadingInterpolation(thirdRowStartPose.getHeading(), thirdRowEndPose.getHeading())
+                .setLinearHeadingInterpolation(firstRowStartPose.getHeading(), firstRowEndPose.getHeading())
                 .build();
 
-        pathThirdtoShoot = follower
+        pathFirsttoShoot = follower
                 .pathBuilder()
                 .addPath(
-                        new BezierLine(thirdRowEndPose, shootPose)
+                        new BezierLine(firstRowEndPose, shootPose)
                 )
-                .setLinearHeadingInterpolation(thirdRowEndPose.getHeading(), shootPose.getHeading())
+                .setLinearHeadingInterpolation(firstRowEndPose.getHeading(), shootPose.getHeading())
                 .build();
 
         pathShoottoEnd = follower
@@ -271,39 +265,40 @@ public class testAuto extends OpMode {
                     waiting = false;
                 }
                 break;
-            case SHOOTPOS_THIRDROW:
+            case SHOOTPOS_FIRSTROW:
                 if (!follower.isBusy() && !waiting) {
                     waitStart = System.currentTimeMillis();
                     waiting = true;
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 500) {
-                    follower.followPath(pathShoottoThird);
+                    follower.followPath(pathShoottoFirst);
                     pathState = PathState.COLLECT_THIRDROW;
                     waiting = false;
                     intake.setPower(1);
 
                 }
                 break;
-            case COLLECT_THIRDROW:
+            case COLLECT_FIRSTROW:
                 if (!follower.isBusy() && !waiting) {
                     waitStart = System.currentTimeMillis();
                     waiting = true;
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 500) {
-                    follower.followPath(pathThirdCollect, collectSpeed, true);
-                    pathState = PathState.THIRDROW_SHOOTPOS;
-                    thirdrow = true;
+                    follower.followPath(pathFirstCollect, collectSpeed, false);
+                    pathState = PathState.FIRSTROW_SHOOTPOS;
+                    firstrow = true;
                     waiting = false;
 
                 }
                 break;
-            case THIRDROW_SHOOTPOS:
+            case FIRSTROW_SHOOTPOS:
                 if (!follower.isBusy() && !waiting) {
                     waitStart = System.currentTimeMillis();
                     waiting = true;
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 500) {
-                    follower.followPath(pathThirdtoShoot);
+                    follower.followPath(pathFirsttoShoot);
+
                     pathState = PathState.SHOOT;
                     waiting = false;
                 }
@@ -343,12 +338,13 @@ public class testAuto extends OpMode {
                         belly = false;
                     }
                     else if(secondrow) {
-                        pathState = PathState.SHOOTPOS_THIRDROW;
+                        pathState = PathState.SHOOTPOS_FIRSTROW;
                         secondrow = false;
                     }
-                    else if(thirdrow) {
+                    else if(firstrow) {
                         pathState = PathState.SHOOTPOS_ENDPOSE;
-                        thirdrow = false;
+                        firstrow = false;
+
                     }
                     waiting = false;
                 }
