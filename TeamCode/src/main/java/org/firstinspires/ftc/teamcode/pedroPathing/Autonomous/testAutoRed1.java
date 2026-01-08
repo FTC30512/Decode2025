@@ -20,23 +20,24 @@ import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
-@Autonomous(name = "testAutoBlue1", group = "Autonomous")
-public class testAutoBlue1 extends OpMode {
+@Autonomous(name = "testAutoRed1", group = "Autonomous")
+class testAutoRed1 extends OpMode {
 
     //public static PathConstraints pathConstraints = new PathConstraints(0.3, 100, 4, 5);
 
     public Follower follower;
-    private final Pose startPose = new Pose(56.5, 138.5, Math.toRadians(90));
+    private final Pose startPose = new Pose(104.5, 138.5, Math.toRadians(90));
     private final Pose shootPose = new Pose(57.000, 86.000, Math.toRadians(135));
-    private final Pose firstRowStartPose = new Pose(44.000, 87.000, Math.toRadians(0));
-    private final Pose firstRowEndPose = new Pose(25.000, 87.000, Math.toRadians(0));
-    private final Pose secondRowStartPose = new Pose(44.000, 63.500, Math.toRadians(0));
-    private final Pose secondRowEndPose = new Pose(22.000, 63.500, Math.toRadians(0));
-    private final Pose thirdRowStartPose = new Pose(44.000, 38.000, Math.toRadians(0));
-    private final Pose thirdRowEndPose = new Pose(22.000, 38.000, Math.toRadians(0));
-    private final Pose endPose = new Pose(48, 128, Math.toRadians(180));
+    private final Pose firstRowStartPose = new Pose(99.000, 85.000, Math.toRadians(0));
+    private final Pose firstRowEndPose = new Pose(120.000, 85.000, Math.toRadians(0));
+    private final Pose secondRowStartPose = new Pose(99.000, 60.000, Math.toRadians(180));
+    private final Pose secondRowEndPose = new Pose(120.000, 60.000, Math.toRadians(180));
+    private final Pose thirdRowStartPose = new Pose(99.000, 35.000, Math.toRadians(180));
+    private final Pose thirdRowEndPose = new Pose(120.000, 35.000, Math.toRadians(180));
+    private final Pose endPose = new Pose(106.05559633873604, 33.32267266350823, Math.toRadians(180));
     double collectSpeed = 0.3;
-    public enum PathState{
+
+    public enum PathState {
         STARTPOS_SHOOTPOS,
         SHOOTPOS_FIRSTROW,
         SHOOTPOS_SECONDROW,
@@ -52,6 +53,7 @@ public class testAutoBlue1 extends OpMode {
         STOP
 
     }
+
     PathState pathState;
     public PathChain pathStarttoShoot, pathShoottoSecond, pathSecondCollect, pathSecondtoShoot, pathShoottoFirst, pathFirstCollect, pathFirsttoShoot, pathShoottoEnd;
     private Servo gateServo, shooterServo;
@@ -205,6 +207,7 @@ public class testAutoBlue1 extends OpMode {
                 .setLinearHeadingInterpolation(shootPose.getHeading(), endPose.getHeading())
                 .build();
     }
+
     long waitStart = 0;
     boolean waiting = false;
 
@@ -271,12 +274,14 @@ public class testAutoBlue1 extends OpMode {
                     waiting = true;
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 500) {
-                    follower.followPath(pathShoottoFirst, );
+                    follower.followPath(pathShoottoFirst);
                     pathState = PathState.COLLECT_FIRSTROW;
                     waiting = false;
                     intake.setPower(1);
 
                 }
+                break;
+            case SHOOTPOS_THIRDROW:
                 break;
             case COLLECT_FIRSTROW:
                 if (!follower.isBusy() && !waiting) {
@@ -291,6 +296,8 @@ public class testAutoBlue1 extends OpMode {
 
                 }
                 break;
+            case COLLECT_THIRDROW:
+                break;
             case FIRSTROW_SHOOTPOS:
                 if (!follower.isBusy() && !waiting) {
                     waitStart = System.currentTimeMillis();
@@ -304,6 +311,8 @@ public class testAutoBlue1 extends OpMode {
                 }
                 break;
 
+            case THIRDROW_SHOOTPOS:
+                break;
             case SHOOTPOS_ENDPOSE:
                 if (!follower.isBusy() && !waiting) {
                     waitStart = System.currentTimeMillis();
@@ -333,15 +342,13 @@ public class testAutoBlue1 extends OpMode {
                     sleep(250);
                     shoot();
                     follower.update();
-                    if(belly){
+                    if (belly) {
                         pathState = PathState.SHOOTPOS_SECONDROW;
                         belly = false;
-                    }
-                    else if(secondrow) {
+                    } else if (secondrow) {
                         pathState = PathState.SHOOTPOS_FIRSTROW;
                         secondrow = false;
-                    }
-                    else if(firstrow) {
+                    } else if (firstrow) {
                         pathState = PathState.SHOOTPOS_ENDPOSE;
                         firstrow = false;
 
