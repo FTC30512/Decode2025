@@ -10,17 +10,22 @@ import com.qualcomm.robotcore.hardware.Servo;
 
 @TeleOp
 public class TestMotorWithServos extends LinearOpMode {
-    private double shooterSpeed = 2450.0;
+    private double shooterSpeedMax = 2450.0;
+    private double shooterSpeedMin = 1000.0;
+    private double shooterSpeed;
+    boolean max = false;
     private double power = 0.0;
     private Servo gateServo, shooterServo;
     private DcMotor intake;
     private DcMotorEx shooter;// = hardwareMap.get(DcMotorEx.class, "Shooter");
-    private double Kp = 25.0, Ki = 3.0, Kd = 0.0, Kf = 2.8;
+    private double Kp = 255.0, Ki = 0.0, Kd = 0.0, Kf = 11.62;
     private long shooter_timer;
     private long steadystate_timer, rise_time;
     private boolean rise_time_set;
     private long timediff = 0;
     private boolean timediff_set, steadystate = false;
+    private double[] scale = {10, 1, 0.1, 0.01};
+    int index = 0;
 
     @Override
     public void runOpMode(){
@@ -37,15 +42,21 @@ public class TestMotorWithServos extends LinearOpMode {
         waitForStart();
 
         intake.setPower(1);
+        shooterSpeed = shooterSpeedMax;
         shooter.setVelocity(shooterSpeed);
+        max = true;
         shooter_timer = System.currentTimeMillis();
         while (opModeIsActive()){
+            if (gamepad1.rightBumperWasPressed())
+            {
+                index += 1;
+            }
             if (gamepad1.a || gamepad1.b || gamepad1.x || gamepad1.y) {
                 if (gamepad1.y) {
                     if (gamepad1.dpadUpWasPressed())
-                        Kp += 0.5;
+                        Kp += scale[index % scale.length];
                     if (gamepad1.dpadDownWasPressed())
-                        Kp -= 0.5;
+                        Kp -= scale[index % scale.length];
                 }
                 if (gamepad1.b) {
                     if (gamepad1.dpadUpWasPressed())
@@ -61,9 +72,9 @@ public class TestMotorWithServos extends LinearOpMode {
                 }
                 if (gamepad1.x) {
                     if (gamepad1.dpadUpWasPressed())
-                        Kf += 0.5;
+                        Kf += scale[index % scale.length];
                     if (gamepad1.dpadDownWasPressed())
-                        Kf -= 0.5;
+                        Kf -= scale[index % scale.length];
                 }
 
                 shooter.setVelocityPIDFCoefficients(Kp, Ki, Kd, Kf);
@@ -81,6 +92,22 @@ public class TestMotorWithServos extends LinearOpMode {
                     shooter.setVelocity(shooterSpeed);
                 }
             }
+            /*
+            if (gamepad1.leftBumperWasPressed())
+            {
+                if (max) {
+                    shooterSpeed = shooterSpeedMin;
+                    max = false;
+                }
+                else {
+                    shooterSpeed = shooterSpeedMax;
+                    max = true;
+                }
+                shooter_timer = System.currentTimeMillis();
+                timediff_set = false;
+                rise_time_set = false;
+                shooter.setVelocity(shooterSpeed);
+            }*/
             if (gamepad1.leftBumperWasPressed()){
                 shoot();
                 //shooterSpeed += 100.0;

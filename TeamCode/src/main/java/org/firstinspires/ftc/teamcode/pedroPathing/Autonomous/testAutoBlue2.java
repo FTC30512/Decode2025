@@ -59,7 +59,8 @@ public class testAutoBlue2 extends OpMode {
     private DcMotor intake;
     private DcMotorEx shooter;
     private int shooterSpeed = 2300;
-    private double Kp = 25.0, Ki = 3.0, Kd = 0.0, Kf = 2.8;
+    private double Kp = 255.0, Ki = 0.0, Kd = 0.0, Kf = 11.62;
+    //private double Kp = 25.0, Ki = 3.0, Kd = 0.0, Kf = 2.8;
     private IMU imu;
     boolean belly, firstrow, secondrow, thirdrow = false;
 

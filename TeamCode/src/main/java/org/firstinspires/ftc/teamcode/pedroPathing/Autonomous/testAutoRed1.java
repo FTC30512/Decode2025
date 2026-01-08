@@ -21,21 +21,21 @@ import com.qualcomm.robotcore.hardware.Servo;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
 @Autonomous(name = "testAutoRed1", group = "Autonomous")
-class testAutoRed1 extends OpMode {
+public class testAutoRed1 extends OpMode {
 
     //public static PathConstraints pathConstraints = new PathConstraints(0.3, 100, 4, 5);
 
     public Follower follower;
-    private final Pose startPose = new Pose(104.5, 138.5, Math.toRadians(90));
-    private final Pose shootPose = new Pose(57.000, 86.000, Math.toRadians(135));
-    private final Pose firstRowStartPose = new Pose(99.000, 85.000, Math.toRadians(0));
-    private final Pose firstRowEndPose = new Pose(120.000, 85.000, Math.toRadians(0));
-    private final Pose secondRowStartPose = new Pose(99.000, 60.000, Math.toRadians(180));
-    private final Pose secondRowEndPose = new Pose(120.000, 60.000, Math.toRadians(180));
-    private final Pose thirdRowStartPose = new Pose(99.000, 35.000, Math.toRadians(180));
-    private final Pose thirdRowEndPose = new Pose(120.000, 35.000, Math.toRadians(180));
-    private final Pose endPose = new Pose(106.05559633873604, 33.32267266350823, Math.toRadians(180));
-    double collectSpeed = 0.3;
+    private final Pose startPose = new Pose(87.5, 138.5, Math.toRadians(90));
+    private final Pose shootPose = new Pose(87.000, 86.000, Math.toRadians(45));
+    private final Pose firstRowStartPose = new Pose(100.000, 87.000, Math.toRadians(180));
+    private final Pose firstRowEndPose = new Pose(120.000, 87.000, Math.toRadians(180));
+    private final Pose secondRowStartPose = new Pose(100.000, 64.000, Math.toRadians(180));
+    private final Pose secondRowEndPose = new Pose(120.000, 64.000, Math.toRadians(180));
+    private final Pose thirdRowStartPose = new Pose(100.000, 39.000, Math.toRadians(180));
+    private final Pose thirdRowEndPose = new Pose(120.000, 39.000, Math.toRadians(180));
+    private final Pose endPose = new Pose(96, 128, Math.toRadians(0));
+    double collectSpeed = 0.4;
 
     public enum PathState {
         STARTPOS_SHOOTPOS,
@@ -61,7 +61,8 @@ class testAutoRed1 extends OpMode {
     private DcMotorEx shooter;
     private int shooterSpeed = 2100;
 
-    private double Kp = 25.0, Ki = 3.0, Kd = 0.0, Kf = 2.8;
+    private double Kp = 255.0, Ki = 0.0, Kd = 0.0, Kf = 11.62;
+    //private double Kp = 25.0, Ki = 3.0, Kd = 0.0, Kf = 2.8;
     private IMU imu;
     boolean belly, firstrow, secondrow, thirdrow = false;
 
