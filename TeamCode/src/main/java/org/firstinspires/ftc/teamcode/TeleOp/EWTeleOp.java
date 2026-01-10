@@ -6,9 +6,11 @@ import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
@@ -20,15 +22,18 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagLibrary;
 
 @TeleOp(name = "EW TeleOp", group = "Main")
 public class EWTeleOp extends LinearOpMode {
+
     private LLResult llResult;
+    private ElapsedTime runtime = new ElapsedTime();
+
 
     // --- Servos ---
     private Servo gateServo, shooterServo;
     private Limelight3A limelight;
 
     // --- Motors ---
-    private DcMotor leftFront, leftRear, rightFront, rightRear;
-    private DcMotor intake, shooter;
+    private DcMotor leftFront, leftRear, rightFront, rightRear, intake;
+    private DcMotorEx shooter;
 
     // --- Sensors ---
     private IMU imu;
@@ -37,9 +42,12 @@ public class EWTeleOp extends LinearOpMode {
     private Movement movement;
 
     // --- Shooter Control ---
-    private double shooterSpeed = 0.7;
+    //private double shooterSpeed = 0.7;
     private boolean dpadUp = false;
     private boolean dpadDown = false;
+    private int shooterSpeedMin = 2100, shooterSpeedMax = 2450;
+
+    private double Kp = 255.0, Ki = 0.0, Kd = 0.0, Kf = 11.62;
 
 
     @Override
@@ -70,6 +78,11 @@ public class EWTeleOp extends LinearOpMode {
 
         // --- Main loop ---
         while (opModeIsActive()) {
+
+            if (runtime.seconds() > 105){
+                gamepad1.rumble(15000);
+            }
+
             YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
             limelight.updateRobotOrientation(orientation.getYaw(AngleUnit.DEGREES));
             llResult = limelight.getLatestResult();
@@ -93,40 +106,31 @@ public class EWTeleOp extends LinearOpMode {
             // --- Intake ---
             intake.setPower(1);
 
-            // ---Shooter---
-            shooter.setPower(1);
-
             // --- Shooting logic ---
             if (gamepad1.right_trigger > 0.5){
-                shooter.setPower(0.85);
-                while (shooter.getPower() != 0.85){
-
-                }
-                sleep(250);
+                shooter.setVelocity(shooterSpeedMin);
+                sleep(200);
                 shoot();
                 telemetry.addLine("Shooting");
             }
             if (gamepad1.left_trigger > 0.5){
-                shooter.setPower(1);
-                while (shooter.getPower() != 1){
-
-                }
-                sleep(250);
+                shooter.setVelocity(shooterSpeedMax);
+                sleep(400);
                 shoot();
                 telemetry.addLine("Shooting");
             }
 
-            if (gamepad1.dpad_up && !dpadUp) {
-                shooterSpeed += 0.05;
-            }
-            if (gamepad1.dpad_down && !dpadDown) {
-                shooterSpeed -= 0.05;
-            }
-            shooterSpeed = Math.max(0, Math.min(shooterSpeed, 1));
-            dpadUp = gamepad1.dpad_up;
-            dpadDown = gamepad1.dpad_down;
-
-            shooter.setPower(shooterSpeed);
+//            if (gamepad1.dpad_up && !dpadUp) {
+//                shooterSpeed += 0.05;
+//            }
+//            if (gamepad1.dpad_down && !dpadDown) {
+//                shooterSpeed -= 0.05;
+//            }
+//            shooterSpeed = Math.max(0, Math.min(shooterSpeed, 1));
+//            dpadUp = gamepad1.dpad_up;
+//            dpadDown = gamepad1.dpad_down;
+//
+//            shooter.setPower(shooterSpeed);
 
             if (gamepad1.x) {
                 shoot();
@@ -151,7 +155,9 @@ public class EWTeleOp extends LinearOpMode {
         rightFront = hardwareMap.dcMotor.get("rightFront");
         rightRear = hardwareMap.dcMotor.get("rightRear");
         intake = hardwareMap.dcMotor.get("Intake");
-        shooter = hardwareMap.dcMotor.get("Shooter");
+        shooter = hardwareMap.get(DcMotorEx.class, "Shooter");
+
+        shooter.setVelocityPIDFCoefficients(Kp, Ki, Kd, Kf);
 
         leftFront.setDirection(DcMotor.Direction.REVERSE);
         leftRear.setDirection(DcMotor.Direction.REVERSE);
@@ -187,6 +193,8 @@ public class EWTeleOp extends LinearOpMode {
         for (DcMotor m : new DcMotor[]{leftFront, leftRear, rightFront, rightRear}) {
             m.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         }
+
+        runtime.reset();
     }
 
     // --- Shooting method ---

@@ -89,7 +89,7 @@ public class testAutoRed2 extends OpMode {
     // --- Hardware initialization ---
     private void initHardware() {
         intake = hardwareMap.dcMotor.get("Intake");
-        shooter = hardwareMap.get(DcMotorEx.class, "Shooter");
+            shooter = hardwareMap.get(DcMotorEx.class, "Shooter");
         shooter.setDirection(DcMotorSimple.Direction.REVERSE);
         shooter.setVelocityPIDFCoefficients(Kp, Ki, Kd, Kf);
 
