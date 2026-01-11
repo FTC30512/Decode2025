@@ -9,6 +9,8 @@ import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
+import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
@@ -19,21 +21,24 @@ import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
+import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
 @Autonomous(name = "testAutoBlue2", group = "Autonomous")
 public class testAutoBlue2 extends OpMode {
 
     //public static PathConstraints pathConstraints = new PathConstraints(0.3, 100, 4, 5);
+    private LLResult llResult;
 
     public Follower follower;
     private final Pose startPose = new Pose(56.500, 11.500, Math.toRadians(90));
-    private final Pose shootPose = new Pose(58.000, 19.000, Math.toRadians(115));
-    private final Pose firstRowStartPose = new Pose(44.000, 84.000, Math.toRadians(0));
+    private final Pose shootPose = new Pose(58.000, 19.000, Math.toRadians(110));
+    private final Pose firstRowStartPose = new Pose(46.000, 84.000, Math.toRadians(0));
     private final Pose firstRowEndPose = new Pose(22.000, 84.000, Math.toRadians(0));
-    private final Pose secondRowStartPose = new Pose(44.000, 60.000, Math.toRadians(0));
+    private final Pose secondRowStartPose = new Pose(46.000, 60.000, Math.toRadians(0));
     private final Pose secondRowEndPose = new Pose(22.000, 60.000, Math.toRadians(0));
-    private final Pose thirdRowStartPose = new Pose(44.000, 38.000, Math.toRadians(0));
+    private final Pose thirdRowStartPose = new Pose(46.000, 38.000, Math.toRadians(0));
     private final Pose thirdRowEndPose = new Pose(22.000, 38.000, Math.toRadians(0));
     private final Pose endPose = new Pose(38.71408250355619, 33.5931721194879, Math.toRadians(180));
     double collectSpeed = 0.3;
@@ -55,10 +60,14 @@ public class testAutoBlue2 extends OpMode {
     }
     PathState pathState;
     public PathChain pathStarttoShoot, pathShoottoSecond, pathSecondCollect, pathSecondtoShoot, pathShoottoThird, pathThirdCollect, pathThirdtoShoot, pathShoottoEnd;
+    private DcMotor leftFront, leftRear, rightFront, rightRear;
+    private YawPitchRollAngles orientation;
+
     private Servo gateServo, shooterServo;
     private DcMotor intake;
     private DcMotorEx shooter;
-    private int shooterSpeed = 2300;
+    private Limelight3A limelight;
+    private int shooterSpeed = 2475;
     private double Kp = 255.0, Ki = 0.0, Kd = 0.0, Kf = 11.62;
     //private double Kp = 25.0, Ki = 3.0, Kd = 0.0, Kf = 2.8;
     private IMU imu;
@@ -97,6 +106,11 @@ public class testAutoBlue2 extends OpMode {
         shooterServo.setDirection(Servo.Direction.REVERSE);
         intake.setDirection(DcMotorSimple.Direction.REVERSE);
 
+        leftFront = hardwareMap.dcMotor.get("leftFront");
+        leftRear = hardwareMap.dcMotor.get("leftRear");
+        rightFront = hardwareMap.dcMotor.get("rightFront");
+        rightRear = hardwareMap.dcMotor.get("rightRear");
+
         //colorSensor = hardwareMap.colorSensor.get("colorSensor");
         imu = hardwareMap.get(IMU.class, "imu");
 
@@ -107,6 +121,10 @@ public class testAutoBlue2 extends OpMode {
                 )
         );
         imu.initialize(parameters);
+        limelight = hardwareMap.get(Limelight3A.class, "limelight");
+        limelight.pipelineSwitch(1);
+        intake.setDirection(DcMotorSimple.Direction.REVERSE);
+        limelight.start();
     }
 
     @Override
@@ -120,6 +138,10 @@ public class testAutoBlue2 extends OpMode {
     public void loop() {
         follower.update();
         autonomousPathUpdate();
+
+        orientation = imu.getRobotYawPitchRollAngles();
+        limelight.updateRobotOrientation(orientation.getYaw(AngleUnit.DEGREES));
+        llResult = limelight.getLatestResult();
 
         telemetry.addData("path state", pathState);
         telemetry.addData("x", follower.getPose().getX());
@@ -169,7 +191,7 @@ public class testAutoBlue2 extends OpMode {
                 .addPath(
                         new BezierCurve(
                                 secondRowEndPose,
-                                new Pose(47.665, 48.268),
+                                new Pose(52.665, 53.268),
                                 shootPose
                         )
                 )
@@ -265,7 +287,7 @@ public class testAutoBlue2 extends OpMode {
                     waiting = true;
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 500) {
-                    follower.followPath(pathSecondtoShoot);
+                    follower.followPath(pathSecondtoShoot, 0.8, false);
                     pathState = PathState.SHOOT;
                     waiting = false;
                 }
@@ -302,7 +324,7 @@ public class testAutoBlue2 extends OpMode {
                     waiting = true;
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 500) {
-                    follower.followPath(pathThirdtoShoot, 0.7, false);
+                    follower.followPath(pathThirdtoShoot, 0.8, false);
                     pathState = PathState.SHOOT;
                     waiting = false;
                 }
@@ -336,22 +358,31 @@ public class testAutoBlue2 extends OpMode {
                     }
                     else{}
                         */
-                        waitStart = System.currentTimeMillis();
-                        waiting = true;
+//                    follower.breakFollowing();
+                    waitStart = System.currentTimeMillis();
+                    waiting = true;
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 500) {
+                    if (llResult != null && llResult.isValid()){
+                        Pose3D botPose = llResult.getBotpose();
+                        telemetry.addData("Tx", llResult.getTx());
+                        telemetry.addData("Ty", llResult.getTy());
+                        telemetry.addData("Ta", llResult.getTa());
+                        pid_turn_by_gyro(llResult.getTx(), 0.5);
+                        telemetry.update();
+                    }
                     //sleep(500);
                     shoot();
-                    follower.update();
+//                    follower.update();
                     intake.setPower(0);
                     sleep(200);
                     intake.setPower(1);
                     sleep(250);
                     shoot();
-                    follower.update();
+//                    follower.update();
                     sleep(250);
                     shoot();
-                    follower.update();
+//                    follower.update();
                     if(belly){
                         pathState = PathState.SHOOTPOS_SECONDROW;
                         belly = false;
@@ -386,5 +417,50 @@ public class testAutoBlue2 extends OpMode {
         gateServo.setPosition(0);
         sleep(100);
         intake.setPower(1);
+    }
+    private double getHeading() {
+        double angle = getRawHeading();
+        if (angle > 180) angle -= 360;
+        if (angle < -180) angle += 360;
+        return angle;
+    }
+
+    private double getRawHeading() {
+        YawPitchRollAngles angles = imu.getRobotYawPitchRollAngles();
+        return angles.getYaw(AngleUnit.DEGREES);
+    }
+
+    public void pid_turn_by_gyro(double targetYaw, double speed){
+        targetYaw=-targetYaw;
+        double currentYaw = getHeading();
+        double error;
+        double actYaw = getHeading() + targetYaw;
+        double kp = 0.01;
+        while(Math.abs(actYaw - getHeading()) > 0.85){
+
+            error = kp * (actYaw - getHeading());
+            double power;
+            if(error > 0)
+                power = Math.min(Math.max(error, 0.1), speed);
+            else
+                power = Math.min(Math.max(error, -speed), -0.1);
+
+            telemetry.addLine("Current Heading angle" + getHeading());
+            telemetry.addLine( "Target Angle" + targetYaw);
+            telemetry.addLine("Actual Target Yaw" + actYaw);
+            telemetry.addLine("Actual Power " + power);
+            telemetry.update();
+            setDrivePower(-power, -power, power, power );
+        }
+        setDrivePower(0,0,0,0 );
+
+    }
+
+    private void setDrivePower(double lfPower, double lrPower, double rfPower, double rrPower)
+    {
+        leftFront.setPower(lfPower);
+        leftRear.setPower(lrPower);
+        rightFront.setPower(rfPower);
+        rightRear.setPower(rrPower);
     }
 }

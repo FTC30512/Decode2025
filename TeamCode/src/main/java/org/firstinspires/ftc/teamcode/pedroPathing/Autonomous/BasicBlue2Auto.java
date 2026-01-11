@@ -13,7 +13,6 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 import org.firstinspires.ftc.vision.apriltag.AprilTagLibrary;
 
-@Autonomous
 public class BasicBlue2Auto extends LinearOpMode {
 
     // --- Servos ---

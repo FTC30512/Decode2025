@@ -17,6 +17,12 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.hardware.limelightvision.Limelight3A;
+
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
+import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
@@ -26,7 +32,8 @@ public class testAutoRed1 extends OpMode {
     //public static PathConstraints pathConstraints = new PathConstraints(0.3, 100, 4, 5);
 
     public Follower follower;
-    private final Pose startPose = new Pose(87.5, 138.5, Math.toRadians(90));
+    private final Pose startPose = new Pose(124.8, 126.8, Math.toRadians(43.8));
+//    private final Pose startPose = new Pose(87.5, 138.5, Math.toRadians(90));
     private final Pose shootPose = new Pose(87.000, 86.000, Math.toRadians(45));
     private final Pose firstRowStartPose = new Pose(100.000, 87.000, Math.toRadians(180));
     private final Pose firstRowEndPose = new Pose(120.000, 87.000, Math.toRadians(180));
@@ -55,11 +62,15 @@ public class testAutoRed1 extends OpMode {
     }
 
     PathState pathState;
+    private LLResult llResult;
     public PathChain pathStarttoShoot, pathShoottoSecond, pathSecondCollect, pathSecondtoShoot, pathShoottoFirst, pathFirstCollect, pathFirsttoShoot, pathShoottoEnd;
     private Servo gateServo, shooterServo;
     private DcMotor intake;
     private DcMotorEx shooter;
-    private int shooterSpeed = 2100;
+    private int shooterSpeed = 2200;
+    private DcMotor leftFront, leftRear, rightFront, rightRear;
+    private YawPitchRollAngles orientation;
+    private Limelight3A limelight;
 
     private double Kp = 255.0, Ki = 0.0, Kd = 0.0, Kf = 11.62;
     //private double Kp = 25.0, Ki = 3.0, Kd = 0.0, Kf = 2.8;
@@ -88,6 +99,12 @@ public class testAutoRed1 extends OpMode {
 
     // --- Hardware initialization ---
     private void initHardware() {
+
+        leftFront = hardwareMap.dcMotor.get("leftFront");
+        leftRear = hardwareMap.dcMotor.get("leftRear");
+        rightFront = hardwareMap.dcMotor.get("rightFront");
+        rightRear = hardwareMap.dcMotor.get("rightRear");
+
         intake = hardwareMap.dcMotor.get("Intake");
         shooter = hardwareMap.get(DcMotorEx.class, "Shooter");
         shooter.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -109,6 +126,10 @@ public class testAutoRed1 extends OpMode {
                 )
         );
         imu.initialize(parameters);
+        limelight = hardwareMap.get(Limelight3A.class, "limelight");
+        limelight.pipelineSwitch(1);
+        intake.setDirection(DcMotorSimple.Direction.REVERSE);
+        limelight.start();
     }
 
     @Override
@@ -120,6 +141,10 @@ public class testAutoRed1 extends OpMode {
 
     @Override
     public void loop() {
+        orientation = imu.getRobotYawPitchRollAngles();
+        limelight.updateRobotOrientation(orientation.getYaw(AngleUnit.DEGREES));
+        llResult = limelight.getLatestResult();
+
         follower.update();
         autonomousPathUpdate();
 
@@ -305,7 +330,7 @@ public class testAutoRed1 extends OpMode {
                     waiting = true;
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 500) {
-                    follower.followPath(pathFirsttoShoot, 0.5, false);
+                    follower.followPath(pathFirsttoShoot, 0.8, false);
 
                     pathState = PathState.SHOOT;
                     waiting = false;
@@ -329,20 +354,29 @@ public class testAutoRed1 extends OpMode {
                 if (!follower.isBusy() && !waiting) {
                     waitStart = System.currentTimeMillis();
                     waiting = true;
+                    follower.breakFollowing();
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 500) {
+                    if (llResult != null && llResult.isValid()){
+                        Pose3D botPose = llResult.getBotpose();
+                        telemetry.addData("Tx", llResult.getTx());
+                        telemetry.addData("Ty", llResult.getTy());
+                        telemetry.addData("Ta", llResult.getTa());
+                        pid_turn_by_gyro(llResult.getTx(), 0.5);
+                        telemetry.update();
+                    }
                     //sleep(500);
                     shoot();
-                    follower.update();
+//                    follower.update();
                     intake.setPower(0);
                     sleep(200);
                     intake.setPower(1);
                     sleep(250);
                     shoot();
-                    follower.update();
+//                    follower.update();
                     sleep(250);
                     shoot();
-                    follower.update();
+//                    follower.update();
                     if (belly) {
                         pathState = PathState.SHOOTPOS_SECONDROW;
                         belly = false;
@@ -376,5 +410,50 @@ public class testAutoRed1 extends OpMode {
         gateServo.setPosition(0);
         sleep(100);
         intake.setPower(1);
+    }
+    private double getHeading() {
+        double angle = getRawHeading();
+        if (angle > 180) angle -= 360;
+        if (angle < -180) angle += 360;
+        return angle;
+    }
+
+    private double getRawHeading() {
+        YawPitchRollAngles angles = imu.getRobotYawPitchRollAngles();
+        return angles.getYaw(AngleUnit.DEGREES);
+    }
+
+    public void pid_turn_by_gyro(double targetYaw, double speed){
+        targetYaw=-targetYaw;
+        double currentYaw = getHeading();
+        double error;
+        double actYaw = getHeading() + targetYaw;
+        double kp = 0.01;
+        while(Math.abs(actYaw - getHeading()) > 0.85){
+
+            error = kp * (actYaw - getHeading());
+            double power;
+            if(error > 0)
+                power = Math.min(Math.max(error, 0.1), speed);
+            else
+                power = Math.min(Math.max(error, -speed), -0.1);
+
+            telemetry.addLine("Current Heading angle" + getHeading());
+            telemetry.addLine( "Target Angle" + targetYaw);
+            telemetry.addLine("Actual Target Yaw" + actYaw);
+            telemetry.addLine("Actual Power " + power);
+            telemetry.update();
+            setDrivePower(-power, -power, power, power );
+        }
+        setDrivePower(0,0,0,0 );
+
+    }
+
+    private void setDrivePower(double lfPower, double lrPower, double rfPower, double rrPower)
+    {
+        leftFront.setPower(lfPower);
+        leftRear.setPower(lrPower);
+        rightFront.setPower(rfPower);
+        rightRear.setPower(rrPower);
     }
 }
