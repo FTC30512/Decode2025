@@ -73,7 +73,7 @@ public class LimelightTest extends OpMode {
         double error;
         double actYaw = getHeading() + targetYaw;
         double kp = 0.01;
-        while(Math.abs(actYaw - getHeading()) > 0.85){
+        while(Math.abs(actYaw - getHeading()) > 0.5){
 
             error = kp * (actYaw - getHeading());
             double power;

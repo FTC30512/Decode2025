@@ -45,7 +45,8 @@ public class EWTeleOp extends LinearOpMode {
     //private double shooterSpeed = 0.7;
     private boolean dpadUp = false;
     private boolean dpadDown = false;
-    private int shooterSpeedMin = 2100, shooterSpeedMax = 2450;
+    private int shooterSpeedMin = 2200, shooterSpeedMax = 2475;
+    private double shooterSpeed;
 
     private double Kp = 255.0, Ki = 0.0, Kd = 0.0, Kf = 11.62;
 
@@ -88,10 +89,10 @@ public class EWTeleOp extends LinearOpMode {
             llResult = limelight.getLatestResult();
             if (llResult != null && llResult.isValid()){
                 Pose3D botPose = llResult.getBotpose();
-                telemetry.addData("Tx", llResult.getTx());
-                telemetry.addData("Ty", llResult.getTy());
-                telemetry.addData("Ta", llResult.getTa());
-                telemetry.update();
+//                telemetry.addData("Tx", llResult.getTx());
+//                telemetry.addData("Ty", llResult.getTy());
+//                telemetry.addData("Ta", llResult.getTa());
+//                telemetry.update();
             }
 
             if (gamepad1.left_bumper){
@@ -106,19 +107,37 @@ public class EWTeleOp extends LinearOpMode {
             // --- Intake ---
             intake.setPower(1);
 
-            // --- Shooting logic ---
+//            // --- Shooting logic ---
+//            if (gamepad1.right_trigger > 0.5){
+//                shooter.setVelocity(shooterSpeedMin);
+//                sleep(200);
+//                shoot();
+//                telemetry.addLine("Shooting");
+//            }
+//            if (gamepad1.left_trigger > 0.5){
+//                shooter.setVelocity(shooterSpeedMax);
+//                sleep(400);
+//                shoot();
+//                telemetry.addLine("Shooting");
+//            }
+
             if (gamepad1.right_trigger > 0.5){
-                shooter.setVelocity(shooterSpeedMin);
-                sleep(200);
                 shoot();
-                telemetry.addLine("Shooting");
+//                telemetry.addLine("Shooting");
             }
-            if (gamepad1.left_trigger > 0.5){
-                shooter.setVelocity(shooterSpeedMax);
-                sleep(400);
-                shoot();
-                telemetry.addLine("Shooting");
+            if (llResult != null && llResult.isValid()){
+                if (llResult.getTa() > 0.3) {
+                    shooterSpeed = (-275 * llResult.getTa()) + 2557.5;
+                }else {
+                    shooterSpeed = 2800;
+                }
             }
+            shooter.setVelocity(shooterSpeed);
+//            if (llResult.getTa() < 0.5){
+//                shooter.setVelocity(shooterSpeedMax);
+//            } else if (llResult.getTa() > 0.75 && llResult.getTa() < 2.25) {
+//                shooter.setVelocity(shooterSpeedMin);
+//            }
 
 //            if (gamepad1.dpad_up && !dpadUp) {
 //                shooterSpeed += 0.05;
@@ -141,8 +160,12 @@ public class EWTeleOp extends LinearOpMode {
             }
 
             // --- Telemetry ---
-            telemetry.addData("Shooter Servo Position", shooterServo.getPosition());
-            telemetry.addData("Shooter Power", shooter.getPower());
+//            telemetry.addData("Shooter Servo Position", shooterServo.getPosition());
+//            telemetry.addData("Shooter Power", shooter.getPower());
+//            telemetry.update();
+            telemetry.addData("Lx", gamepad1.left_stick_x);
+            telemetry.addData("Ly", gamepad1.left_stick_y);
+            telemetry.addData("ShooterVelocity", shooter.getVelocity());
             telemetry.update();
         }
     }
@@ -229,15 +252,15 @@ public class EWTeleOp extends LinearOpMode {
         double currentYaw = getHeading();
         double error;
         double actYaw = getHeading() + targetYaw;
-        double kp = 0.01;
-        while(Math.abs(actYaw - getHeading()) > 0.85){
+        double kp = 0.02;
+        while(Math.abs(actYaw - getHeading()) > 0.5){
 
             error = kp * (actYaw - getHeading());
             double power;
             if(error > 0)
-                power = Math.min(Math.max(error, 0.1), speed);
+                power = Math.min(Math.max(error, 0.15), speed);
             else
-                power = Math.min(Math.max(error, -speed), -0.1);
+                power = Math.min(Math.max(error, -speed), -0.15);
 
             telemetry.addLine("Current Heading angle" + getHeading());
             telemetry.addLine( "Target Angle" + targetYaw);

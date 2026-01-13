@@ -4,6 +4,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -18,7 +19,8 @@ public class BasicRed1Auto extends LinearOpMode {
     // --- Servos ---
     private Servo gateServo, shooterServo;
     private DcMotor leftFront, leftRear, rightFront, rightRear;
-    private DcMotor intake, shooter;
+    private DcMotor intake;
+    private DcMotorEx shooter;
     // --- Sensors ---
     //private ColorSensor colorSensor;
     private IMU imu;
@@ -28,6 +30,7 @@ public class BasicRed1Auto extends LinearOpMode {
     double ticksPerRev = 537.7;
     //HardwareMap hardwareMap;
     private double yawOffset = 0;
+    private double Kp = 255.0, Ki = 0.0, Kd = 0.0, Kf = 11.62;
 
     /*public EWAutonomous() {
 
@@ -67,7 +70,7 @@ public class BasicRed1Auto extends LinearOpMode {
 
         if (opModeIsActive()) {
             intake.setPower(1);
-            shooter.setPower(0.9);
+            shooter.setVelocity(2200);
             straightInches(-50,0.5);
             sleep(250);
             shoot();
@@ -134,7 +137,7 @@ public class BasicRed1Auto extends LinearOpMode {
         rightFront = hardwareMap.dcMotor.get("rightFront");
         rightRear = hardwareMap.dcMotor.get("rightRear");
         intake = hardwareMap.dcMotor.get("Intake");
-        shooter = hardwareMap.dcMotor.get("Shooter");
+        shooter = hardwareMap.get(DcMotorEx.class, "Shooter");
 
         leftFront.setDirection(DcMotor.Direction.REVERSE);
         leftRear.setDirection(DcMotor.Direction.REVERSE);
@@ -163,6 +166,8 @@ public class BasicRed1Auto extends LinearOpMode {
                 .addTag(24, "Red Target", 6.5, DistanceUnit.INCH)
                 .addTag(22, "Motif Pattern", 6.5, DistanceUnit.INCH)
                 .build();
+        shooter.setVelocityPIDFCoefficients(Kp, Ki, Kd, Kf);
+
     }
     private void setDrivePower(double lfPower, double lrPower, double rfPower, double rrPower)
     {
