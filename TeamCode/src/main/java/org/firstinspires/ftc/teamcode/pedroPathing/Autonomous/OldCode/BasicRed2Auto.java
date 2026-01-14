@@ -1,8 +1,6 @@
-package org.firstinspires.ftc.teamcode.pedroPathing.Autonomous;
+package org.firstinspires.ftc.teamcode.pedroPathing.Autonomous.OldCode;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -14,7 +12,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 import org.firstinspires.ftc.vision.apriltag.AprilTagLibrary;
 
-public class BasicRed1Auto extends LinearOpMode {
+public class BasicRed2Auto extends LinearOpMode {
 
     // --- Servos ---
     private Servo gateServo, shooterServo;
@@ -70,36 +68,39 @@ public class BasicRed1Auto extends LinearOpMode {
 
         if (opModeIsActive()) {
             intake.setPower(1);
-            shooter.setVelocity(2200);
-            straightInches(-50,0.5);
-            sleep(250);
+            shooter.setVelocity(2475);
+            straightInches(12,0.3);
+            pid_turn_by_gyro(-25, 0.3);
+            sleep(500);
             shoot();
             intake.setPower(-0.3);
-            sleep(250);
+            sleep(200);
             intake.setPower(1);
             sleep(250);
             shoot();
             sleep(250);
             shoot();
-            pid_turn_by_gyro(140, 0.4);
-            strafeInches("left", 8, 0.5);
-            straightInches(-36, 0.5);
-            straightInches(36, 0.5);
-            strafeInches("right", 8, 0.5);
-            pid_turn_by_gyro(-140, 0.4);
+            sleep(200);
+            straightInches(17, 0.5);
+            sleep(200);
+            pid_turn_by_gyro(115, 0.3);
+            straightInches(-42, 0.5);
             sleep(250);
+            straightInches(38, 0.5);
+            pid_turn_by_gyro(-110, 0.3);
+            straightInches(-25, 0.5);
+            sleep(500);
             shoot();
             intake.setPower(-0.3);
-            sleep(250);
+            sleep(200);
             intake.setPower(1);
             sleep(250);
             shoot();
             sleep(250);
             shoot();
-            strafeInches("right", 20, 1);
-            pid_turn_by_gyro(-50, 0.5);
-            intake.setPower(0);
-            shooter.setPower(0);
+            sleep(200);
+            straightInches(24, 1);
+            pid_turn_by_gyro(-70, 0.5);
             while(opModeIsActive()) {
                 telemetry.addLine("Current Heading angle" + getHeading());
                 telemetry.update();
@@ -200,7 +201,6 @@ public class BasicRed1Auto extends LinearOpMode {
 
     public void straightInches(double inches, double powerPct) {
         int ticks = (int) (inches * countsPerInch);
-        //powerPct /= 100;
 
         telemetry.addData("Ticks: ", ticks);
         telemetry.addData("powerPct", powerPct);
@@ -221,7 +221,7 @@ public class BasicRed1Auto extends LinearOpMode {
 
         double kP = 0.1;
         double minPower = 0.15;
-        double angleFix = 0.02;
+        double angleFix = 0.005;
         double startAngle = getHeading();
 
         while (opModeIsActive() && (leftFront.isBusy() || leftRear.isBusy() || rightFront.isBusy() || rightRear.isBusy())) {
@@ -244,10 +244,10 @@ public class BasicRed1Auto extends LinearOpMode {
             telemetry.addData("rightRear.getCurrentPosition()", rightRear.getCurrentPosition());
             telemetry.addLine("Power: " + powerNow + " Fix: " + fix + " Error: " + error);
 
-            leftFront.setPower(powerNow);// - fix);
-            leftRear.setPower(powerNow);// - fix);
-            rightFront.setPower(powerNow);// + fix);
-            rightRear.setPower(powerNow);// + fix);
+            leftFront.setPower(powerNow);
+            leftRear.setPower(powerNow);
+            rightFront.setPower(powerNow);
+            rightRear.setPower(powerNow);
             telemetry.update();
         }
 
@@ -258,6 +258,7 @@ public class BasicRed1Auto extends LinearOpMode {
         stopAndReset();
     }
     public void strafeInches(String dir, double inches, double powerPct) {
+        powerPct /= 100;
         double fixFactor = 1.07;
         int ticks = (int) (inches * fixFactor * countsPerInch);
 
@@ -276,7 +277,7 @@ public class BasicRed1Auto extends LinearOpMode {
         }
 
         double kP = 0.1;
-        double minPower = 0.2;
+        double minPower = 0.15;
         double angleFix = 0.01;
         double startAngle = getHeading();
 
@@ -292,10 +293,10 @@ public class BasicRed1Auto extends LinearOpMode {
             if (error < -180) error += 360;
             double fix = error * angleFix;
 
-            leftFront.setPower(powerNow);
-            leftRear.setPower(-powerNow);
-            rightFront.setPower(-powerNow);
-            rightRear.setPower(powerNow);
+            leftFront.setPower(powerNow - fix);
+            leftRear.setPower(-powerNow - fix);
+            rightFront.setPower(-powerNow + fix);
+            rightRear.setPower(powerNow + fix);
         }
 
         //currentX += inches;
@@ -396,4 +397,3 @@ public class BasicRed1Auto extends LinearOpMode {
         sleep(100);
     }
 }
-

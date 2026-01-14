@@ -45,12 +45,12 @@ public class EWTeleOp extends LinearOpMode {
     //private double shooterSpeed = 0.7;
     private boolean dpadUp = false;
     private boolean dpadDown = false;
+
+
     private int shooterSpeedMin = 2200, shooterSpeedMax = 2475;
     private double shooterSpeed;
 
     private double Kp = 255.0, Ki = 0.0, Kd = 0.0, Kf = 11.62;
-
-
     @Override
     public void runOpMode() {
 
