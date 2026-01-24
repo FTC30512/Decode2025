@@ -15,6 +15,7 @@ import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -44,6 +45,8 @@ public class testAutoBlue2 extends OpMode {
     private final Pose secondRowEndPose = new Pose(22.000, 60.000, Math.toRadians(0));
     private final Pose thirdRowStartPose = new Pose(46.000, 38.000, Math.toRadians(0));
     private final Pose thirdRowEndPose = new Pose(22.000, 38.000, Math.toRadians(0));
+    private final Pose gatePoseHalf = new Pose(24, 67, Math.toRadians(90));
+    private final Pose gatePoseFinal = new Pose(16, 67, Math.toRadians(90));
     private final Pose endPose = new Pose(38.71408250355619, 33.5931721194879, Math.toRadians(180));
     double collectSpeed = 0.3;
     private enum PathState{
@@ -53,6 +56,9 @@ public class testAutoBlue2 extends OpMode {
         SHOOTPOS_THIRDROW,
         COLLECT_FIRSTROW,
         COLLECT_SECONDROW,
+        SECONDROW_GATEHALF,
+        GATEHALF_GATEFINAL,
+        GATEFINAL_SHOOT,
         COLLECT_THIRDROW,
         FIRSTROW_SHOOTPOS,
         SECONDROW_SHOOTPOS,
@@ -70,9 +76,21 @@ public class testAutoBlue2 extends OpMode {
     }
 
     PathState pathState;
-    public PathChain pathStarttoShoot, pathShoottoSecond, pathSecondCollect, pathSecondtoShoot, pathShoottoThird, pathThirdCollect, pathThirdtoShoot, pathShoottoEnd;
     private int IdNum;
+    public PathChain
+            pathStarttoShoot,
+            pathShoottoSecond,
+            pathSecondCollect,
+            pathSecondtoGateHalf,
+            pathGateHalftoGateFinal,
+            pathGateFinaltoShoot,
+            pathSecondtoShoot,
+            pathShoottoThird,
+            pathThirdCollect,
+            pathThirdtoShoot,
+            pathShoottoEnd;
     private DcMotor leftFront, leftRear, rightFront, rightRear;
+    private ColorSensor colorSensor;
     private YawPitchRollAngles orientation;
 
     private Servo gateServo, shooterServo;
@@ -134,9 +152,10 @@ public class testAutoBlue2 extends OpMode {
                         RevHubOrientationOnRobot.UsbFacingDirection.LEFT
                 )
         );
+
+
         imu.initialize(parameters);
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
-        limelight.pipelineSwitch(1);
         limelight.pipelineSwitch(2);
         intake.setDirection(DcMotorSimple.Direction.REVERSE);
         limelight.start();
@@ -173,6 +192,7 @@ public class testAutoBlue2 extends OpMode {
 
     @Override
     public void start() {
+        limelight.pipelineSwitch(1);
         pathState = PathState.STARTPOS_SHOOTPOS;
         intake.setPower(1);
         shooter.setVelocity(shooterSpeed);
@@ -188,6 +208,9 @@ public class testAutoBlue2 extends OpMode {
         llResult = limelight.getLatestResult();
 
         telemetry.addData("path state", pathState);
+        telemetry.addData("IdNum", IdNum);
+        telemetry.addData("IDX", idx);
+        telemetry.addData("Length", autoVariations.length);
         telemetry.addData("x", follower.getPose().getX());
         telemetry.addData("y", follower.getPose().getY());
         telemetry.addData("is Busy ", follower.isBusy());
@@ -268,6 +291,35 @@ public class testAutoBlue2 extends OpMode {
                 .setLinearHeadingInterpolation(thirdRowEndPose.getHeading(), shootPose.getHeading())
                 .build();
 
+        pathSecondtoGateHalf = follower
+                .pathBuilder()
+                .addPath(
+                        new BezierLine(secondRowEndPose, gatePoseHalf)
+                )
+                .setLinearHeadingInterpolation(secondRowEndPose.getHeading(), gatePoseHalf.getHeading())
+                .build();
+
+        pathGateHalftoGateFinal = follower
+                .pathBuilder()
+                .addPath(
+                        new BezierLine(gatePoseHalf, gatePoseFinal)
+                )
+                .setLinearHeadingInterpolation(gatePoseHalf.getHeading(), gatePoseFinal.getHeading())
+                .build();
+
+        pathGateFinaltoShoot = follower
+                .pathBuilder()
+                .addPath(
+                        new BezierCurve(
+                                gatePoseFinal,
+                                new Pose(52.665, 53.268),
+                                shootPose
+                        )
+                )
+                .setHeadingConstraint(0.0001)
+                .setLinearHeadingInterpolation(gatePoseFinal.getHeading(), shootPose.getHeading())
+                .build(); 
+
         pathShoottoEnd = follower
                 .pathBuilder()
                 .addPath(
@@ -319,7 +371,14 @@ public class testAutoBlue2 extends OpMode {
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 500) {
                     follower.followPath(pathSecondCollect, collectSpeed, true);
-                    pathState = PathState.SECONDROW_SHOOTPOS;
+
+                    boolean contains = Arrays.asList(autoVariations).contains(AutoVariations.SECONDROW_OPEN_GATE);
+
+                    if (contains) {
+                        pathState = PathState.SECONDROW_GATEHALF;
+                    } else {
+                        pathState = PathState.SECONDROW_SHOOTPOS;
+                    }
                     secondrow = true;
                     waiting = false;
 
@@ -385,6 +444,43 @@ public class testAutoBlue2 extends OpMode {
                     waiting = false;
                 }
                 break;
+
+            case SECONDROW_GATEHALF:
+                if (!follower.isBusy() && !waiting) {
+                    waitStart = System.currentTimeMillis();
+                    waiting = true;
+                }
+                if (waiting && System.currentTimeMillis() - waitStart >= 500) {
+                    follower.followPath(pathSecondtoGateHalf);
+                    pathState = PathState.GATEHALF_GATEFINAL;
+                    waiting = false;
+                }
+                break;
+
+            case GATEHALF_GATEFINAL:
+                if (!follower.isBusy() && !waiting) {
+                    waitStart = System.currentTimeMillis();
+                    waiting = true;
+                }
+                if (waiting && System.currentTimeMillis() - waitStart >= 500) {
+                    follower.followPath(pathGateHalftoGateFinal);
+                    pathState = PathState.GATEFINAL_SHOOT;
+                    waiting = false;
+                }
+                break;
+
+            case GATEFINAL_SHOOT:
+                if (!follower.isBusy() && !waiting) {
+                    waitStart = System.currentTimeMillis();
+                    waiting = true;
+                }
+                if (waiting && System.currentTimeMillis() - waitStart >= 500) {
+                    follower.followPath(pathGateFinaltoShoot);
+                    pathState = PathState.SHOOT;
+                    waiting = false;
+                }
+                break;
+
             case SHOOT:
                 if (!follower.isBusy() && !waiting) {
                     /*
@@ -435,7 +531,7 @@ public class testAutoBlue2 extends OpMode {
                     } else if (autoVariations[idx] == AutoVariations.THIRDROW) {
                         pathState = PathState.SHOOTPOS_THIRDROW;
                     } else if (autoVariations[idx] == AutoVariations.SECONDROW_OPEN_GATE) {
-                        pathState = PathState.SECONDROW_SHOOTPOS;
+                        pathState = PathState.SHOOTPOS_SECONDROW;
                     } else if (autoVariations[idx] == AutoVariations.ENDPOSE) {
                         pathState = PathState.SHOOTPOS_ENDPOSE;
                     }
