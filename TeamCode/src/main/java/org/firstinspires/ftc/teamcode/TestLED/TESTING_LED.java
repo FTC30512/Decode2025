@@ -3,7 +3,6 @@ package org.firstinspires.ftc.teamcode.TestLED;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-@TeleOp
 public class TESTING_LED extends OpMode {
     TestLED led = new TestLED();
 

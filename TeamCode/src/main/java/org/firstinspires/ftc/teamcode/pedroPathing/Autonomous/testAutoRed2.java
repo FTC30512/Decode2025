@@ -28,7 +28,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Autonomous(name = "testAutoRed2", group = "Autonomous")
+@Autonomous(name = "AutoRed2", group = "Autonomous")
 public class testAutoRed2 extends OpMode {
     private static final Logger log = LoggerFactory.getLogger(testAutoRed2.class);
 

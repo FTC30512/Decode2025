@@ -8,7 +8,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
 
-@TeleOp
+
 public class TestMotorWithServos extends LinearOpMode {
     private double shooterSpeedMax = 2450.0;
     private double shooterSpeedMin = 1000.0;

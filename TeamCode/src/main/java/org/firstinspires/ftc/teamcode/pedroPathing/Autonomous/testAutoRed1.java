@@ -26,7 +26,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
-@Autonomous(name = "testAutoRed1", group = "Autonomous")
+@Autonomous(name = "AutoRed1", group = "Autonomous")
 public class testAutoRed1 extends OpMode {
 
     //public static PathConstraints pathConstraints = new PathConstraints(0.3, 100, 4, 5);
@@ -41,7 +41,7 @@ public class testAutoRed1 extends OpMode {
     private final Pose secondRowEndPose = new Pose(120.000, 64.000, Math.toRadians(180));
     private final Pose thirdRowStartPose = new Pose(100.000, 39.000, Math.toRadians(180));
     private final Pose thirdRowEndPose = new Pose(120.000, 39.000, Math.toRadians(180));
-    private final Pose endPose = new Pose(96, 128, Math.toRadians(0));
+    private final Pose endPose = new Pose(96, 72, Math.toRadians(0));
     double collectSpeed = 0.4;
 
     public enum PathState {
