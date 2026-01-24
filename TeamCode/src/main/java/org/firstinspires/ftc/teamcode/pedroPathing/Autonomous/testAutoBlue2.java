@@ -10,6 +10,7 @@ import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
 import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
@@ -25,7 +26,10 @@ import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
-@Autonomous(name = "testAutoBlue2", group = "Autonomous")
+import java.util.Arrays;
+import java.util.List;
+
+@Autonomous(name = "AutoBlue2", group = "Autonomous")
 public class testAutoBlue2 extends OpMode {
 
     //public static PathConstraints pathConstraints = new PathConstraints(0.3, 100, 4, 5);
@@ -56,10 +60,18 @@ public class testAutoBlue2 extends OpMode {
         SHOOTPOS_ENDPOSE,
         SHOOT,
         STOP
-
     }
+    public enum AutoVariations {
+        FIRSTROW,
+        SECONDROW,
+        THIRDROW,
+        SECONDROW_OPEN_GATE,
+        ENDPOSE
+    }
+
     PathState pathState;
     public PathChain pathStarttoShoot, pathShoottoSecond, pathSecondCollect, pathSecondtoShoot, pathShoottoThird, pathThirdCollect, pathThirdtoShoot, pathShoottoEnd;
+    private int IdNum;
     private DcMotor leftFront, leftRear, rightFront, rightRear;
     private YawPitchRollAngles orientation;
 
@@ -72,6 +84,8 @@ public class testAutoBlue2 extends OpMode {
     //private double Kp = 25.0, Ki = 3.0, Kd = 0.0, Kf = 2.8;
     private IMU imu;
     boolean belly, firstrow, secondrow, thirdrow = false;
+    AutoVariations[] autoVariations = new AutoVariations[5];
+    int idx = 0;
 
     @Override
     public void init() {
@@ -123,8 +137,38 @@ public class testAutoBlue2 extends OpMode {
         imu.initialize(parameters);
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
         limelight.pipelineSwitch(1);
+        limelight.pipelineSwitch(2);
         intake.setDirection(DcMotorSimple.Direction.REVERSE);
         limelight.start();
+    }
+
+    @Override
+    public void init_loop() {
+        orientation = imu.getRobotYawPitchRollAngles();
+        limelight.updateRobotOrientation(orientation.getYaw(AngleUnit.DEGREES));
+        llResult = limelight.getLatestResult();
+        if (llResult != null && llResult.isValid() && !llResult.getFiducialResults().isEmpty()) {
+            IdNum = llResult.getFiducialResults().get(0).getFiducialId();
+            telemetry.addData("AprilTag ID", IdNum);
+        } else {
+            telemetry.addLine("No AprilTag detected");
+        }
+        telemetry.update();
+
+
+        
+        if (IdNum == 21){
+            autoVariations[0] = AutoVariations.SECONDROW_OPEN_GATE;
+            autoVariations[1] = AutoVariations.THIRDROW;
+            autoVariations[2] = AutoVariations.ENDPOSE;
+        }
+
+        if (IdNum == 22){
+            autoVariations[0] = AutoVariations.THIRDROW;
+            autoVariations[1] = AutoVariations.SECONDROW;
+            autoVariations[2] = AutoVariations.SECONDROW;
+            autoVariations[3] = AutoVariations.ENDPOSE;
+        }
     }
 
     @Override
@@ -383,18 +427,33 @@ public class testAutoBlue2 extends OpMode {
                     sleep(250);
                     shoot();
 //                    follower.update();
-                    if(belly){
+
+                    if (autoVariations[idx] == AutoVariations.FIRSTROW) {
+                        pathState = PathState.SHOOTPOS_FIRSTROW;
+                    } else if (autoVariations[idx] == AutoVariations.SECONDROW) {
                         pathState = PathState.SHOOTPOS_SECONDROW;
-                        belly = false;
-                    }
-                    else if(secondrow) {
+                    } else if (autoVariations[idx] == AutoVariations.THIRDROW) {
                         pathState = PathState.SHOOTPOS_THIRDROW;
-                        secondrow = false;
-                    }
-                    else if(thirdrow) {
+                    } else if (autoVariations[idx] == AutoVariations.SECONDROW_OPEN_GATE) {
+                        pathState = PathState.SECONDROW_SHOOTPOS;
+                    } else if (autoVariations[idx] == AutoVariations.ENDPOSE) {
                         pathState = PathState.SHOOTPOS_ENDPOSE;
-                        thirdrow = false;
                     }
+                    idx += 1;
+
+
+//                    if(belly){
+//                        pathState = PathState.SHOOTPOS_SECONDROW;
+//                        belly = false;
+//                    }
+//                    else if(secondrow) {
+//                        pathState = PathState.SHOOTPOS_THIRDROW;
+//                        secondrow = false;
+//                    }
+//                    else if(thirdrow) {
+//                        pathState = PathState.SHOOTPOS_ENDPOSE;
+//                        thirdrow = false;
+//                    }
                     waiting = false;
                 }
                 break;
