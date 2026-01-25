@@ -38,17 +38,17 @@ public class testAutoBlue2 extends OpMode {
 
     public Follower follower;
     private final Pose startPose = new Pose(56.500, 11.500, Math.toRadians(90));
-    private final Pose shootPose = new Pose(58.000, 19.000, Math.toRadians(110));
+    private final Pose shootPose = new Pose(58.000, 21.000, Math.toRadians(110));
     private final Pose firstRowStartPose = new Pose(46.000, 84.000, Math.toRadians(0));
-    private final Pose firstRowEndPose = new Pose(22.000, 84.000, Math.toRadians(0));
+    private final Pose firstRowEndPose = new Pose(15, 84.000, Math.toRadians(0));
     private final Pose secondRowStartPose = new Pose(46.000, 60.000, Math.toRadians(0));
-    private final Pose secondRowEndPose = new Pose(22.000, 60.000, Math.toRadians(0));
+    private final Pose secondRowEndPose = new Pose(15, 60.000, Math.toRadians(0));
     private final Pose thirdRowStartPose = new Pose(46.000, 38.000, Math.toRadians(0));
-    private final Pose thirdRowEndPose = new Pose(22.000, 38.000, Math.toRadians(0));
+    private final Pose thirdRowEndPose = new Pose(15, 38.000, Math.toRadians(0));
     private final Pose gatePoseHalf = new Pose(24, 67, Math.toRadians(90));
     private final Pose gatePoseFinal = new Pose(16, 67, Math.toRadians(90));
     private final Pose endPose = new Pose(38.71408250355619, 33.5931721194879, Math.toRadians(180));
-    double collectSpeed = 0.3;
+    double collectSpeed = 0.65;
     private enum PathState{
         STARTPOS_SHOOTPOS,
         SHOOTPOS_FIRSTROW,
@@ -76,7 +76,7 @@ public class testAutoBlue2 extends OpMode {
     }
 
     PathState pathState;
-    private int IdNum;
+    private int IdNum = 21;
     public PathChain
             pathStarttoShoot,
             pathShoottoSecond,
@@ -97,7 +97,7 @@ public class testAutoBlue2 extends OpMode {
     private DcMotor intake;
     private DcMotorEx shooter;
     private Limelight3A limelight;
-    private int shooterSpeed = 2475;
+    private int shooterSpeed = 2525;
     private double Kp = 255.0, Ki = 0.0, Kd = 0.0, Kf = 11.62;
     //private double Kp = 25.0, Ki = 3.0, Kd = 0.0, Kf = 2.8;
     private IMU imu;
@@ -177,15 +177,14 @@ public class testAutoBlue2 extends OpMode {
 
         
         if (IdNum == 21){
-            autoVariations[0] = AutoVariations.SECONDROW_OPEN_GATE;
-            autoVariations[1] = AutoVariations.THIRDROW;
+            autoVariations[0] = AutoVariations.THIRDROW;
+            autoVariations[1] = AutoVariations.SECONDROW;
             autoVariations[2] = AutoVariations.ENDPOSE;
         }
 
         if (IdNum == 22){
-            autoVariations[0] = AutoVariations.THIRDROW;
-            autoVariations[1] = AutoVariations.SECONDROW;
-            autoVariations[2] = AutoVariations.SECONDROW;
+            autoVariations[0] = AutoVariations.SECONDROW_OPEN_GATE;
+            autoVariations[1] = AutoVariations.THIRDROW;
             autoVariations[3] = AutoVariations.ENDPOSE;
         }
     }
@@ -232,9 +231,7 @@ public class testAutoBlue2 extends OpMode {
                 .setLinearHeadingInterpolation(startPose.getHeading(), shootPose.getHeading())
                 .build();
 
-
-        //Wait5 = 2000;
-
+        
         pathShoottoSecond = follower
                 .pathBuilder()
                 .addPath(
@@ -242,9 +239,7 @@ public class testAutoBlue2 extends OpMode {
                 )
                 .setLinearHeadingInterpolation(shootPose.getHeading(), secondRowStartPose.getHeading())
                 .build();
-
-        //Wait6 = 2000;
-
+        
         pathSecondCollect = follower
                 .pathBuilder()
                 .addPath(
@@ -318,7 +313,7 @@ public class testAutoBlue2 extends OpMode {
                 )
                 .setHeadingConstraint(0.0001)
                 .setLinearHeadingInterpolation(gatePoseFinal.getHeading(), shootPose.getHeading())
-                .build(); 
+                .build();
 
         pathShoottoEnd = follower
                 .pathBuilder()
@@ -345,7 +340,7 @@ public class testAutoBlue2 extends OpMode {
                     waitStart = System.currentTimeMillis();
                     waiting = true;
                 }
-                if (waiting && System.currentTimeMillis() - waitStart >= 500) {
+                if (waiting && System.currentTimeMillis() - waitStart >= 100) {
                     follower.followPath(pathStarttoShoot);
                     pathState = PathState.SHOOT;
                     waiting = false;
@@ -356,7 +351,7 @@ public class testAutoBlue2 extends OpMode {
                     waitStart = System.currentTimeMillis();
                     waiting = true;
                 }
-                if (waiting && System.currentTimeMillis() - waitStart >= 500) {
+                if (waiting && System.currentTimeMillis() - waitStart >= 100) {
                     follower.followPath(pathShoottoSecond);
                     pathState = PathState.COLLECT_SECONDROW;
                     waiting = false;
@@ -369,7 +364,7 @@ public class testAutoBlue2 extends OpMode {
                     waitStart = System.currentTimeMillis();
                     waiting = true;
                 }
-                if (waiting && System.currentTimeMillis() - waitStart >= 500) {
+                if (waiting && System.currentTimeMillis() - waitStart >= 100) {
                     follower.followPath(pathSecondCollect, collectSpeed, true);
 
                     boolean contains = Arrays.asList(autoVariations).contains(AutoVariations.SECONDROW_OPEN_GATE);
@@ -389,7 +384,7 @@ public class testAutoBlue2 extends OpMode {
                     waitStart = System.currentTimeMillis();
                     waiting = true;
                 }
-                if (waiting && System.currentTimeMillis() - waitStart >= 500) {
+                if (waiting && System.currentTimeMillis() - waitStart >= 100) {
                     follower.followPath(pathSecondtoShoot, 0.8, false);
                     pathState = PathState.SHOOT;
                     waiting = false;
@@ -400,7 +395,7 @@ public class testAutoBlue2 extends OpMode {
                     waitStart = System.currentTimeMillis();
                     waiting = true;
                 }
-                if (waiting && System.currentTimeMillis() - waitStart >= 500) {
+                if (waiting && System.currentTimeMillis() - waitStart >= 100) {
                     follower.followPath(pathShoottoThird);
                     pathState = PathState.COLLECT_THIRDROW;
                     waiting = false;
@@ -413,7 +408,7 @@ public class testAutoBlue2 extends OpMode {
                     waitStart = System.currentTimeMillis();
                     waiting = true;
                 }
-                if (waiting && System.currentTimeMillis() - waitStart >= 500) {
+                if (waiting && System.currentTimeMillis() - waitStart >= 100) {
                     follower.followPath(pathThirdCollect, collectSpeed, true);
                     pathState = PathState.THIRDROW_SHOOTPOS;
                     thirdrow = true;
@@ -426,7 +421,7 @@ public class testAutoBlue2 extends OpMode {
                     waitStart = System.currentTimeMillis();
                     waiting = true;
                 }
-                if (waiting && System.currentTimeMillis() - waitStart >= 500) {
+                if (waiting && System.currentTimeMillis() - waitStart >= 100) {
                     follower.followPath(pathThirdtoShoot, 0.8, false);
                     pathState = PathState.SHOOT;
                     waiting = false;
@@ -438,7 +433,7 @@ public class testAutoBlue2 extends OpMode {
                     waitStart = System.currentTimeMillis();
                     waiting = true;
                 }
-                if (waiting && System.currentTimeMillis() - waitStart >= 500) {
+                if (waiting && System.currentTimeMillis() - waitStart >= 100) {
                     follower.followPath(pathShoottoEnd);
                     pathState = PathState.STOP;
                     waiting = false;
@@ -450,7 +445,7 @@ public class testAutoBlue2 extends OpMode {
                     waitStart = System.currentTimeMillis();
                     waiting = true;
                 }
-                if (waiting && System.currentTimeMillis() - waitStart >= 500) {
+                if (waiting && System.currentTimeMillis() - waitStart >= 100) {
                     follower.followPath(pathSecondtoGateHalf);
                     pathState = PathState.GATEHALF_GATEFINAL;
                     waiting = false;
@@ -462,7 +457,7 @@ public class testAutoBlue2 extends OpMode {
                     waitStart = System.currentTimeMillis();
                     waiting = true;
                 }
-                if (waiting && System.currentTimeMillis() - waitStart >= 500) {
+                if (waiting && System.currentTimeMillis() - waitStart >= 100) {
                     follower.followPath(pathGateHalftoGateFinal);
                     pathState = PathState.GATEFINAL_SHOOT;
                     waiting = false;
@@ -474,7 +469,7 @@ public class testAutoBlue2 extends OpMode {
                     waitStart = System.currentTimeMillis();
                     waiting = true;
                 }
-                if (waiting && System.currentTimeMillis() - waitStart >= 500) {
+                if (waiting && System.currentTimeMillis() - waitStart >= 1000) {
                     follower.followPath(pathGateFinaltoShoot);
                     pathState = PathState.SHOOT;
                     waiting = false;
@@ -514,8 +509,8 @@ public class testAutoBlue2 extends OpMode {
                     //sleep(500);
                     shoot();
 //                    follower.update();
-                    intake.setPower(0);
-                    sleep(200);
+                    intake.setPower(-0.15);
+                    sleep(150);
                     intake.setPower(1);
                     sleep(250);
                     shoot();
