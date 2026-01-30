@@ -28,6 +28,8 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
+
 @Autonomous(name = "AutoRed2", group = "Autonomous")
 public class testAutoRed2 extends OpMode {
     private static final Logger log = LoggerFactory.getLogger(testAutoRed2.class);
@@ -37,7 +39,7 @@ public class testAutoRed2 extends OpMode {
     public Follower follower;
     private LLResult llResult;
 
-    private final Pose startPose = new Pose(86.500, 11.500, Math.toRadians(90));
+    private final Pose startPose = new Pose(86.499, 11.499, Math.toRadians(90));
     private final Pose shootPose = new Pose(84.000, 19.000, Math.toRadians(64));
     private final Pose firstRowStartPose = new Pose(98.000, 60.000, Math.toRadians(180));
     private final Pose firstRowEndPose = new Pose(120.000, 60, Math.toRadians(180));
@@ -45,8 +47,10 @@ public class testAutoRed2 extends OpMode {
     private final Pose secondRowEndPose = new Pose(120.000, 60.000, Math.toRadians(180));
     private final Pose thirdRowStartPose = new Pose(98.000, 40.000, Math.toRadians(180));
     private final Pose thirdRowEndPose = new Pose(120.000, 40.000, Math.toRadians(180));
+    private final Pose gatePoseHalf = new Pose(144-24, 67, Math.toRadians(90));
+    private final Pose gatePoseFinal = new Pose(144-16, 67, Math.toRadians(90));
     private final Pose endPose = new Pose(105.32586660900631, 33.079429420265015, Math.toRadians(0));
-    double collectSpeed = 0.3;
+    double collectSpeed = 0.65;
     private enum PathState{
         STARTPOS_SHOOTPOS,
         SHOOTPOS_FIRSTROW,
@@ -57,6 +61,9 @@ public class testAutoRed2 extends OpMode {
         COLLECT_THIRDROW,
         FIRSTROW_SHOOTPOS,
         SECONDROW_SHOOTPOS,
+        SECONDROW_GATEHALF,
+        GATEHALF_GATEFINAL,
+        GATEFINAL_SHOOT,
         THIRDROW_SHOOTPOS,
         SHOOTPOS_ENDPOSE,
         SHOOT,
@@ -64,18 +71,39 @@ public class testAutoRed2 extends OpMode {
 
     }
     PathState pathState;
-    public PathChain pathStarttoShoot, pathShoottoSecond, pathSecondCollect, pathSecondtoShoot, pathShoottoThird, pathThirdCollect, pathThirdtoShoot, pathShoottoEnd;
+    private int IdNum = 21;
+    public PathChain
+            pathStarttoShoot,
+            pathShoottoSecond,
+            pathSecondCollect,
+            pathSecondtoGateHalf,
+            pathGateHalftoGateFinal,
+            pathGateFinaltoShoot,
+            pathSecondtoShoot,
+            pathShoottoThird,
+            pathThirdCollect,
+            pathThirdtoShoot,
+            pathShoottoEnd;
+    public enum AutoVariations {
+        FIRSTROW,
+        SECONDROW,
+        THIRDROW,
+        SECONDROW_OPEN_GATE,
+        ENDPOSE
+    }
     private Servo gateServo, shooterServo;
     private DcMotor intake;
     private DcMotorEx shooter;
     private Limelight3A limelight;
-    private int shooterSpeed = 2475;
+    private int shooterSpeed = 2525;
     private double Kp = 255.0, Ki = 0.0, Kd = 0.0, Kf = 11.62;
     private DcMotor leftFront, leftRear, rightFront, rightRear;
     private YawPitchRollAngles orientation;
     //private double Kp = 25.0, Ki = 3.0, Kd = 0.0, Kf = 2.8;
     private IMU imu;
     boolean belly, firstrow, secondrow, thirdrow = false;
+    AutoVariations[] autoVariations = new AutoVariations[5];
+    int idx = 0;
 
 
 
@@ -130,13 +158,58 @@ public class testAutoRed2 extends OpMode {
         imu.initialize(parameters);
 
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
-        limelight.pipelineSwitch(1);
+        limelight.pipelineSwitch(2);
         intake.setDirection(DcMotorSimple.Direction.REVERSE);
         limelight.start();
     }
 
     @Override
+    public void init_loop() {
+        orientation = imu.getRobotYawPitchRollAngles();
+        limelight.updateRobotOrientation(orientation.getYaw(AngleUnit.DEGREES));
+        llResult = limelight.getLatestResult();
+        if (llResult != null && llResult.isValid() && !llResult.getFiducialResults().isEmpty()) {
+            IdNum = llResult.getFiducialResults().get(0).getFiducialId();
+            telemetry.addData("AprilTag ID", IdNum);
+        } else {
+            telemetry.addLine("No AprilTag detected");
+        }
+        telemetry.update();
+
+        switch (IdNum){
+            case 21:
+                autoVariations[0] = AutoVariations.THIRDROW;
+                autoVariations[1] = AutoVariations.SECONDROW;
+                autoVariations[2] = AutoVariations.ENDPOSE;
+                break;
+            case 22:
+                autoVariations[0] = AutoVariations.THIRDROW;
+                autoVariations[1] = AutoVariations.SECONDROW_OPEN_GATE;
+                autoVariations[3] = AutoVariations.ENDPOSE;
+                break;
+            default:
+                autoVariations[0] = AutoVariations.THIRDROW;
+                autoVariations[1] = AutoVariations.SECONDROW;
+                autoVariations[2] = AutoVariations.ENDPOSE;
+                break;
+        }
+
+//        if (IdNum == 21){
+//            autoVariations[0] = AutoVariations.SECONDROW;
+//            autoVariations[1] = AutoVariations.THIRDROW;
+//            autoVariations[2] = AutoVariations.ENDPOSE;
+//        }
+//
+//        if (IdNum == 22){
+//            autoVariations[0] = AutoVariations.SECONDROW_OPEN_GATE;
+//            autoVariations[1] = AutoVariations.THIRDROW;
+//            autoVariations[3] = AutoVariations.ENDPOSE;
+//        }
+    }
+
+    @Override
     public void start() {
+        limelight.pipelineSwitch(1);
         pathState = PathState.STARTPOS_SHOOTPOS;
         intake.setPower(1);
         shooter.setVelocity(shooterSpeed);
@@ -189,6 +262,35 @@ public class testAutoRed2 extends OpMode {
                         new BezierLine(secondRowStartPose, secondRowEndPose)
                 )
                 .setLinearHeadingInterpolation(secondRowStartPose.getHeading(), secondRowEndPose.getHeading())
+                .build();
+
+        pathSecondtoGateHalf = follower
+                .pathBuilder()
+                .addPath(
+                        new BezierLine(secondRowEndPose, gatePoseHalf)
+                )
+                .setLinearHeadingInterpolation(secondRowEndPose.getHeading(), gatePoseHalf.getHeading())
+                .build();
+
+        pathGateHalftoGateFinal = follower
+                .pathBuilder()
+                .addPath(
+                        new BezierLine(gatePoseHalf, gatePoseFinal)
+                )
+                .setLinearHeadingInterpolation(gatePoseHalf.getHeading(), gatePoseFinal.getHeading())
+                .build();
+
+        pathGateFinaltoShoot = follower
+                .pathBuilder()
+                .addPath(
+                        new BezierCurve(
+                                gatePoseFinal,
+                                new Pose(84.40694769008739, 63.48483482567039),
+                                shootPose
+                        )
+                )
+                .setHeadingConstraint(0.0001)
+                .setLinearHeadingInterpolation(gatePoseFinal.getHeading(), shootPose.getHeading())
                 .build();
 
         pathSecondtoShoot = follower
@@ -254,7 +356,7 @@ public class testAutoRed2 extends OpMode {
                     waitStart = System.currentTimeMillis();
                     waiting = true;
                 }
-                if (waiting && System.currentTimeMillis() - waitStart >= 500) {
+                if (waiting && System.currentTimeMillis() - waitStart >= 100) {
                     follower.followPath(pathStarttoShoot);
                     pathState = PathState.SHOOT;
                     waiting = false;
@@ -265,7 +367,7 @@ public class testAutoRed2 extends OpMode {
                     waitStart = System.currentTimeMillis();
                     waiting = true;
                 }
-                if (waiting && System.currentTimeMillis() - waitStart >= 500) {
+                if (waiting && System.currentTimeMillis() - waitStart >= 100) {
                     follower.followPath(pathShoottoSecond);
                     pathState = PathState.COLLECT_SECONDROW;
                     waiting = false;
@@ -278,9 +380,15 @@ public class testAutoRed2 extends OpMode {
                     waitStart = System.currentTimeMillis();
                     waiting = true;
                 }
-                if (waiting && System.currentTimeMillis() - waitStart >= 500) {
+                if (waiting && System.currentTimeMillis() - waitStart >= 100) {
                     follower.followPath(pathSecondCollect, collectSpeed, true);
-                    pathState = PathState.SECONDROW_SHOOTPOS;
+                    boolean contains = Arrays.asList(autoVariations).contains(AutoVariations.SECONDROW_OPEN_GATE);
+
+                    if (contains) {
+                        pathState = PathState.SECONDROW_GATEHALF;
+                    } else {
+                        pathState = PathState.SECONDROW_SHOOTPOS;
+                    }
                     secondrow = true;
                     waiting = false;
 
@@ -291,7 +399,7 @@ public class testAutoRed2 extends OpMode {
                     waitStart = System.currentTimeMillis();
                     waiting = true;
                 }
-                if (waiting && System.currentTimeMillis() - waitStart >= 500) {
+                if (waiting && System.currentTimeMillis() - waitStart >= 100) {
                     follower.followPath(pathSecondtoShoot);
                     pathState = PathState.SHOOT;
                     waiting = false;
@@ -302,7 +410,7 @@ public class testAutoRed2 extends OpMode {
                     waitStart = System.currentTimeMillis();
                     waiting = true;
                 }
-                if (waiting && System.currentTimeMillis() - waitStart >= 500) {
+                if (waiting && System.currentTimeMillis() - waitStart >= 100) {
                     follower.followPath(pathShoottoThird);
                     pathState = PathState.COLLECT_THIRDROW;
                     waiting = false;
@@ -315,7 +423,7 @@ public class testAutoRed2 extends OpMode {
                     waitStart = System.currentTimeMillis();
                     waiting = true;
                 }
-                if (waiting && System.currentTimeMillis() - waitStart >= 500) {
+                if (waiting && System.currentTimeMillis() - waitStart >= 100) {
                     follower.followPath(pathThirdCollect, collectSpeed, true);
                     pathState = PathState.THIRDROW_SHOOTPOS;
                     thirdrow = true;
@@ -328,7 +436,7 @@ public class testAutoRed2 extends OpMode {
                     waitStart = System.currentTimeMillis();
                     waiting = true;
                 }
-                if (waiting && System.currentTimeMillis() - waitStart >= 500) {
+                if (waiting && System.currentTimeMillis() - waitStart >= 100) {
                     follower.followPath(pathThirdtoShoot);
                     pathState = PathState.SHOOT;
                     waiting = false;
@@ -340,9 +448,44 @@ public class testAutoRed2 extends OpMode {
                     waitStart = System.currentTimeMillis();
                     waiting = true;
                 }
-                if (waiting && System.currentTimeMillis() - waitStart >= 500) {
+                if (waiting && System.currentTimeMillis() - waitStart >= 100) {
                     follower.followPath(pathShoottoEnd);
                     pathState = PathState.STOP;
+                    waiting = false;
+                }
+                break;
+            case SECONDROW_GATEHALF:
+                if (!follower.isBusy() && !waiting) {
+                    waitStart = System.currentTimeMillis();
+                    waiting = true;
+                }
+                if (waiting && System.currentTimeMillis() - waitStart >= 100) {
+                    follower.followPath(pathSecondtoGateHalf);
+                    pathState = PathState.GATEHALF_GATEFINAL;
+                    waiting = false;
+                }
+                break;
+
+            case GATEHALF_GATEFINAL:
+                if (!follower.isBusy() && !waiting) {
+                    waitStart = System.currentTimeMillis();
+                    waiting = true;
+                }
+                if (waiting && System.currentTimeMillis() - waitStart >= 100) {
+                    follower.followPath(pathGateHalftoGateFinal);
+                    pathState = PathState.GATEFINAL_SHOOT;
+                    waiting = false;
+                }
+                break;
+
+            case GATEFINAL_SHOOT:
+                if (!follower.isBusy() && !waiting) {
+                    waitStart = System.currentTimeMillis();
+                    waiting = true;
+                }
+                if (waiting && System.currentTimeMillis() - waitStart >= 1000) {
+                    follower.followPath(pathGateFinaltoShoot);
+                    pathState = PathState.SHOOT;
                     waiting = false;
                 }
                 break;
@@ -351,7 +494,7 @@ public class testAutoRed2 extends OpMode {
                     waitStart = System.currentTimeMillis();
                     waiting = true;
                 }
-                if (waiting && System.currentTimeMillis() - waitStart >= 500) {
+                if (waiting && System.currentTimeMillis() - waitStart >= 100) {
                     if (llResult != null && llResult.isValid()){
                         Pose3D botPose = llResult.getBotpose();
                         telemetry.addData("Tx", llResult.getTx());
@@ -360,11 +503,10 @@ public class testAutoRed2 extends OpMode {
                         pid_turn_by_gyro(llResult.getTx(), 0.5);
                         telemetry.update();
                     }
-                    //sleep(500);
                     shoot();
 //                    follower.update();
-                    intake.setPower(0);
-                    sleep(200);
+                    intake.setPower(-0.15);
+                    sleep(150);
                     intake.setPower(1);
                     sleep(250);
                     shoot();
@@ -372,19 +514,31 @@ public class testAutoRed2 extends OpMode {
                     sleep(250);
                     shoot();
 //                    follower.update();
-                    if(belly){
+//                    if(belly){
+//                        pathState = PathState.SHOOTPOS_SECONDROW;
+//                        belly = false;
+//                    }
+//                    else if(secondrow) {
+//                        pathState = PathState.SHOOTPOS_THIRDROW;
+//                        secondrow = false;
+//                    }
+//                    else if(thirdrow) {
+//                        pathState = PathState.SHOOTPOS_ENDPOSE;
+//                        thirdrow = false;
+//                    }
+//                    waiting = false;
+                    if (autoVariations[idx] == AutoVariations.FIRSTROW) {
+                        pathState = PathState.SHOOTPOS_FIRSTROW;
+                    } else if (autoVariations[idx] == AutoVariations.SECONDROW) {
                         pathState = PathState.SHOOTPOS_SECONDROW;
-                        belly = false;
-                    }
-                    else if(secondrow) {
+                    } else if (autoVariations[idx] == AutoVariations.THIRDROW) {
                         pathState = PathState.SHOOTPOS_THIRDROW;
-                        secondrow = false;
-                    }
-                    else if(thirdrow) {
+                    } else if (autoVariations[idx] == AutoVariations.SECONDROW_OPEN_GATE) {
+                        pathState = PathState.SHOOTPOS_SECONDROW;
+                    } else if (autoVariations[idx] == AutoVariations.ENDPOSE) {
                         pathState = PathState.SHOOTPOS_ENDPOSE;
-                        thirdrow = false;
                     }
-                    waiting = false;
+                    idx += 1;
                 }
                 break;
             case STOP:

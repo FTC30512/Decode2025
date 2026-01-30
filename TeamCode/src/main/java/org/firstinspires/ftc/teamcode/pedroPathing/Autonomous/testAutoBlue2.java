@@ -39,8 +39,8 @@ public class testAutoBlue2 extends OpMode {
     public Follower follower;
     private final Pose startPose = new Pose(56.500, 11.500, Math.toRadians(90));
     private final Pose shootPose = new Pose(58.000, 21.000, Math.toRadians(110));
-    private final Pose firstRowStartPose = new Pose(46.000, 84.000, Math.toRadians(0));
-    private final Pose firstRowEndPose = new Pose(15, 84.000, Math.toRadians(0));
+    private final Pose firstRowStartPose = new Pose(44.000, 87.000, Math.toRadians(0));
+    private final Pose firstRowEndPose = new Pose(25.000, 87.000, Math.toRadians(0));
     private final Pose secondRowStartPose = new Pose(46.000, 60.000, Math.toRadians(0));
     private final Pose secondRowEndPose = new Pose(15, 60.000, Math.toRadians(0));
     private final Pose thirdRowStartPose = new Pose(46.000, 38.000, Math.toRadians(0));
@@ -174,19 +174,35 @@ public class testAutoBlue2 extends OpMode {
         }
         telemetry.update();
 
-
+        switch (IdNum){
+            case 21:
+                autoVariations[0] = AutoVariations.THIRDROW;
+                autoVariations[1] = AutoVariations.SECONDROW;
+                autoVariations[2] = AutoVariations.ENDPOSE;
+                break;
+            case 22:
+                autoVariations[0] = AutoVariations.THIRDROW;
+                autoVariations[1] = AutoVariations.SECONDROW_OPEN_GATE;
+                autoVariations[3] = AutoVariations.ENDPOSE;
+                break;
+            default:
+                autoVariations[0] = AutoVariations.THIRDROW;
+                autoVariations[1] = AutoVariations.SECONDROW;
+                autoVariations[2] = AutoVariations.ENDPOSE;
+                break;
+        }
         
-        if (IdNum == 21){
-            autoVariations[0] = AutoVariations.THIRDROW;
-            autoVariations[1] = AutoVariations.SECONDROW;
-            autoVariations[2] = AutoVariations.ENDPOSE;
-        }
-
-        if (IdNum == 22){
-            autoVariations[0] = AutoVariations.SECONDROW_OPEN_GATE;
-            autoVariations[1] = AutoVariations.THIRDROW;
-            autoVariations[3] = AutoVariations.ENDPOSE;
-        }
+//        if (IdNum == 21){
+//            autoVariations[0] = AutoVariations.THIRDROW;
+//            autoVariations[1] = AutoVariations.SECONDROW;
+//            autoVariations[2] = AutoVariations.ENDPOSE;
+//        }
+//
+//        if (IdNum == 22){
+//            autoVariations[0] = AutoVariations.SECONDROW_OPEN_GATE;
+//            autoVariations[1] = AutoVariations.THIRDROW;
+//            autoVariations[3] = AutoVariations.ENDPOSE;
+//        }
     }
 
     @Override
@@ -497,7 +513,7 @@ public class testAutoBlue2 extends OpMode {
                     waitStart = System.currentTimeMillis();
                     waiting = true;
                 }
-                if (waiting && System.currentTimeMillis() - waitStart >= 500) {
+                if (waiting && System.currentTimeMillis() - waitStart >= 100) {
                     if (llResult != null && llResult.isValid()){
                         Pose3D botPose = llResult.getBotpose();
                         telemetry.addData("Tx", llResult.getTx());
