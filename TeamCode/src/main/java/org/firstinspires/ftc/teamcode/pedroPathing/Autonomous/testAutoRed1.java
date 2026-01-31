@@ -32,9 +32,9 @@ import java.util.Arrays;
 public class testAutoRed1 extends OpMode {
     public Follower follower;
 
-    public AutonomousConstants constants;
-    public AutonomousMovement movement;
-    public AutonomousImplements implement;
+    public AutonomousConstants constants = new AutonomousConstants();
+    public AutonomousMovement movement = new AutonomousMovement();
+    public AutonomousImplements implement = new AutonomousImplements();
     private final Pose startPose = new Pose(124.8, 126.8, Math.toRadians(43.8));
 //    private final Pose startPose = new Pose(87.5, 138.5, Math.toRadians(90));
     private final Pose shootPose = new Pose(87.000, 86.000, Math.toRadians(45));
@@ -86,6 +86,11 @@ public class testAutoRed1 extends OpMode {
 
         panelsTelemetry.debug("Status", "Initialized");
         panelsTelemetry.update(telemetry);
+
+        autoVariations[0] = AutoVariations.THIRDROW;
+        autoVariations[1] = AutoVariations.SECONDROW;
+        autoVariations[2] = AutoVariations.ENDPOSE;
+
     }
     public void init_loop() {
         orientation = movement.imu.getRobotYawPitchRollAngles();
@@ -100,20 +105,17 @@ public class testAutoRed1 extends OpMode {
         telemetry.update();
 
         switch (IdNum){
-            case 21:
+            case 0:
                 autoVariations[0] = AutoVariations.SECONDROW;
-                autoVariations[1] = AutoVariations.THIRDROW;
+                autoVariations[1] = AutoVariations.FIRSTROW;
                 autoVariations[2] = AutoVariations.ENDPOSE;
                 break;
-            case 22:
+            case 1:
                 autoVariations[0] = AutoVariations.SECONDROW_OPEN_GATE;
-                autoVariations[1] = AutoVariations.THIRDROW;
+                autoVariations[1] = AutoVariations.FIRSTROW;
                 autoVariations[3] = AutoVariations.ENDPOSE;
                 break;
             default:
-                autoVariations[0] = AutoVariations.SECONDROW;
-                autoVariations[1] = AutoVariations.THIRDROW;
-                autoVariations[2] = AutoVariations.ENDPOSE;
                 break;
         }
     }

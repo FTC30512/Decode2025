@@ -15,6 +15,7 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.hardware.limelightvision.LLResult;
@@ -34,9 +35,9 @@ public class testAutoBlue1 extends OpMode {
     //19.6, 126.6, 140.3
     public Follower follower;
 
-    public AutonomousConstants constants;
-    public AutonomousMovement movement;
-    public AutonomousImplements implement;
+    public AutonomousConstants constants = new AutonomousConstants();
+    public AutonomousMovement movement = new AutonomousMovement();
+    public AutonomousImplements implement = new AutonomousImplements();
 //    private final Pose startPose = new Pose(56.5, 138.5, Math.toRadians(90));
     private final Pose startPose = new Pose(19.6, 126.6, Math.toRadians(140.3));
     private final Pose shootPose = new Pose(57.000, 86.000, Math.toRadians(135));
@@ -89,6 +90,11 @@ public class testAutoBlue1 extends OpMode {
 
         panelsTelemetry.debug("Status", "Initialized");
         panelsTelemetry.update(telemetry);
+
+        autoVariations[0] = AutoVariations.FIRSTROW;
+        autoVariations[1] = AutoVariations.SECONDROW;
+        autoVariations[2] = AutoVariations.ENDPOSE;
+
     }
     // --- Hardware initialization ---
     private void initHardware() {
@@ -96,6 +102,8 @@ public class testAutoBlue1 extends OpMode {
         implement.init(constants, hardwareMap);
     }
 
+
+    @Override
     public void init_loop() {
         orientation = movement.imu.getRobotYawPitchRollAngles();
         implement.updatelimelightOrientation(orientation.getYaw(AngleUnit.DEGREES));
@@ -108,25 +116,21 @@ public class testAutoBlue1 extends OpMode {
         }
         telemetry.update();
 
-        switch (IdNum){
-            case 21:
-                autoVariations[0] = AutoVariations.SECONDROW;
-                autoVariations[1] = AutoVariations.THIRDROW;
+        switch (IdNum) {
+            case 0:
+                autoVariations[0] = AutoVariations.FIRSTROW;
+                autoVariations[1] = AutoVariations.SECONDROW;
                 autoVariations[2] = AutoVariations.ENDPOSE;
                 break;
-            case 22:
+            case 1:
                 autoVariations[0] = AutoVariations.SECONDROW_OPEN_GATE;
-                autoVariations[1] = AutoVariations.THIRDROW;
-                autoVariations[3] = AutoVariations.ENDPOSE;
+                autoVariations[1] = AutoVariations.FIRSTROW;
+                autoVariations[2] = AutoVariations.ENDPOSE;
                 break;
             default:
-                autoVariations[0] = AutoVariations.SECONDROW;
-                autoVariations[1] = AutoVariations.THIRDROW;
-                autoVariations[2] = AutoVariations.ENDPOSE;
                 break;
         }
     }
-
     @Override
     public void start() {
         constants.pathState = AutonomousConstants.PathState.STARTPOS_SHOOTPOS;

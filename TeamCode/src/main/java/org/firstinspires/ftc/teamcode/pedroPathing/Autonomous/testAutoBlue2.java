@@ -36,9 +36,9 @@ public class testAutoBlue2 extends OpMode {
     private LLResult llResult;
     public Follower follower;
 
-    public AutonomousConstants constants;
-    public AutonomousMovement movement;
-    public AutonomousImplements implement;
+    public AutonomousConstants constants = new AutonomousConstants();
+    public AutonomousMovement movement = new AutonomousMovement();
+    public AutonomousImplements implement = new AutonomousImplements();
     private final Pose startPose = new Pose(56.500, 11.500, Math.toRadians(90));
     private final Pose shootPose = new Pose(58.000, 21.000, Math.toRadians(110));
     private final Pose firstRowStartPose = new Pose(44.000, 87.000, Math.toRadians(0));
@@ -89,6 +89,10 @@ public class testAutoBlue2 extends OpMode {
 
         panelsTelemetry.debug("Status", "Initialized");
         panelsTelemetry.update(telemetry);
+
+        autoVariations[0] = AutoVariations.THIRDROW;
+        autoVariations[1] = AutoVariations.SECONDROW;
+        autoVariations[2] = AutoVariations.ENDPOSE;
     }
 
     // --- Hardware initialization ---
@@ -110,21 +114,18 @@ public class testAutoBlue2 extends OpMode {
         }
         telemetry.update();
 
-        switch (IdNum){
-            case 21:
+        switch (IdNum) {
+            case 0:
                 autoVariations[0] = AutoVariations.THIRDROW;
                 autoVariations[1] = AutoVariations.SECONDROW;
                 autoVariations[2] = AutoVariations.ENDPOSE;
                 break;
-            case 22:
-                autoVariations[0] = AutoVariations.THIRDROW;
-                autoVariations[1] = AutoVariations.SECONDROW_OPEN_GATE;
+            case 1:
+                autoVariations[0] = AutoVariations.SECONDROW_OPEN_GATE;
+                autoVariations[1] = AutoVariations.THIRDROW;
                 autoVariations[2] = AutoVariations.ENDPOSE;
                 break;
             default:
-                autoVariations[0] = AutoVariations.THIRDROW;
-                autoVariations[1] = AutoVariations.SECONDROW;
-                autoVariations[2] = AutoVariations.ENDPOSE;
                 break;
         }
     }

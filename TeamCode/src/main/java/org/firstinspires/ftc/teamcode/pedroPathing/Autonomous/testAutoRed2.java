@@ -35,9 +35,9 @@ public class testAutoRed2 extends OpMode {
     private static final Logger log = LoggerFactory.getLogger(testAutoRed2.class);
     public Follower follower;
 
-    public AutonomousConstants constants;
-    public AutonomousMovement movement;
-    public AutonomousImplements implement;
+    public AutonomousConstants constants = new AutonomousConstants();
+    public AutonomousMovement movement = new AutonomousMovement();
+    public AutonomousImplements implement = new AutonomousImplements();
     private LLResult llResult;
 
     private final Pose startPose = new Pose(86.499, 11.499, Math.toRadians(90));
@@ -75,8 +75,6 @@ public class testAutoRed2 extends OpMode {
     AutoVariations[] autoVariations = new AutoVariations[5];
     int idx = 0;
 
-
-
     @Override
     public void init() {
         initHardware();
@@ -91,6 +89,10 @@ public class testAutoRed2 extends OpMode {
 
         panelsTelemetry.debug("Status", "Initialized");
         panelsTelemetry.update(telemetry);
+
+        autoVariations[0] = AutoVariations.THIRDROW;
+        autoVariations[1] = AutoVariations.SECONDROW;
+        autoVariations[2] = AutoVariations.ENDPOSE;
     }
 
     // --- Hardware initialization ---
@@ -113,20 +115,17 @@ public class testAutoRed2 extends OpMode {
         telemetry.update();
 
         switch (IdNum){
-            case 21:
+            case 0:
                 autoVariations[0] = AutoVariations.THIRDROW;
                 autoVariations[1] = AutoVariations.SECONDROW;
                 autoVariations[2] = AutoVariations.ENDPOSE;
                 break;
-            case 22:
-                autoVariations[0] = AutoVariations.THIRDROW;
-                autoVariations[1] = AutoVariations.SECONDROW_OPEN_GATE;
+            case 1:
+                autoVariations[0] = AutoVariations.SECONDROW_OPEN_GATE;
+                autoVariations[1] = AutoVariations.THIRDROW;
                 autoVariations[3] = AutoVariations.ENDPOSE;
                 break;
             default:
-                autoVariations[0] = AutoVariations.THIRDROW;
-                autoVariations[1] = AutoVariations.SECONDROW;
-                autoVariations[2] = AutoVariations.ENDPOSE;
                 break;
         }
     }
