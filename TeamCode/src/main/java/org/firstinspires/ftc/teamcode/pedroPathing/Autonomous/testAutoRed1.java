@@ -30,10 +30,11 @@ import java.util.Arrays;
 
 @Autonomous(name = "AutoRed1", group = "Autonomous")
 public class testAutoRed1 extends OpMode {
-
-    //public static PathConstraints pathConstraints = new PathConstraints(0.3, 100, 4, 5);
-
     public Follower follower;
+
+    public AutonomousConstants constants;
+    public AutonomousMovement movement;
+    public AutonomousImplements implement;
     private final Pose startPose = new Pose(124.8, 126.8, Math.toRadians(43.8));
 //    private final Pose startPose = new Pose(87.5, 138.5, Math.toRadians(90));
     private final Pose shootPose = new Pose(87.000, 86.000, Math.toRadians(45));
@@ -46,27 +47,6 @@ public class testAutoRed1 extends OpMode {
     private final Pose gatePoseHalf = new Pose(144-24, 67, Math.toRadians(90));
     private final Pose gatePoseFinal = new Pose(144-16, 67, Math.toRadians(90));
     private final Pose endPose = new Pose(96, 72, Math.toRadians(0));
-    double collectSpeed = 0.65;
-
-    public enum PathState {
-        STARTPOS_SHOOTPOS,
-        SHOOTPOS_FIRSTROW,
-        SHOOTPOS_SECONDROW,
-        SHOOTPOS_THIRDROW,
-        COLLECT_FIRSTROW,
-        COLLECT_SECONDROW,
-        COLLECT_THIRDROW,
-        SECONDROW_GATEHALF,
-        GATEHALF_GATEFINAL,
-        GATEFINAL_SHOOT,
-        FIRSTROW_SHOOTPOS,
-        SECONDROW_SHOOTPOS,
-        THIRDROW_SHOOTPOS,
-        SHOOTPOS_ENDPOSE,
-        SHOOT,
-        STOP
-
-    }
     public enum AutoVariations {
         FIRSTROW,
         SECONDROW,
@@ -74,8 +54,6 @@ public class testAutoRed1 extends OpMode {
         SECONDROW_OPEN_GATE,
         ENDPOSE
     }
-
-    PathState pathState;
     private LLResult llResult;
     public PathChain
             pathStarttoShoot,
@@ -89,19 +67,8 @@ public class testAutoRed1 extends OpMode {
             pathSecondtoGateHalf,
             pathGateHalftoGateFinal,
             pathGateFinaltoShoot;
-    private Servo gateServo, shooterServo;
-    private DcMotor intake;
-    private DcMotorEx shooter;
-    private int shooterSpeed = 2200;
-    private DcMotor leftFront, leftRear, rightFront, rightRear;
     private YawPitchRollAngles orientation;
-    private Limelight3A limelight;
     private int IdNum;
-
-    private double Kp = 255.0, Ki = 0.0, Kd = 0.0, Kf = 11.62;
-    //private double Kp = 25.0, Ki = 3.0, Kd = 0.0, Kf = 2.8;
-    private IMU imu;
-    boolean belly, firstrow, secondrow, thirdrow = false;
     AutoVariations[] autoVariations = new AutoVariations[5];
     int idx = 0;
 
@@ -115,19 +82,15 @@ public class testAutoRed1 extends OpMode {
         follower.setMaxPower(1.0);
 
         buildPaths();
-        pathState = PathState.STARTPOS_SHOOTPOS;
+        constants.pathState = AutonomousConstants.PathState.STARTPOS_SHOOTPOS;
 
-        imu.resetYaw();
-        belly = true;
-        gateServo.setPosition(0);
-        shooterServo.setPosition(0);
         panelsTelemetry.debug("Status", "Initialized");
         panelsTelemetry.update(telemetry);
     }
     public void init_loop() {
-        orientation = imu.getRobotYawPitchRollAngles();
-        limelight.updateRobotOrientation(orientation.getYaw(AngleUnit.DEGREES));
-        llResult = limelight.getLatestResult();
+        orientation = movement.imu.getRobotYawPitchRollAngles();
+        implement.updatelimelightOrientation(orientation.getYaw(AngleUnit.DEGREES));
+        llResult = implement.getLimelightResult();
         if (llResult != null && llResult.isValid() && !llResult.getFiducialResults().isEmpty()) {
             IdNum = llResult.getFiducialResults().get(0).getFiducialId();
             telemetry.addData("AprilTag ID", IdNum);
@@ -153,72 +116,31 @@ public class testAutoRed1 extends OpMode {
                 autoVariations[2] = AutoVariations.ENDPOSE;
                 break;
         }
-
-//        if (IdNum == 21){
-//            autoVariations[0] = AutoVariations.THIRDROW;
-//            autoVariations[1] = AutoVariations.SECONDROW;
-//            autoVariations[2] = AutoVariations.ENDPOSE;
-//        }
-//
-//        if (IdNum == 22){
-//            autoVariations[0] = AutoVariations.THIRDROW;
-//            autoVariations[1] = AutoVariations.SECONDROW_OPEN_GATE;
-//            autoVariations[3] = AutoVariations.ENDPOSE;
-//        }
     }
 
     // --- Hardware initialization ---
     private void initHardware() {
-
-        leftFront = hardwareMap.dcMotor.get("leftFront");
-        leftRear = hardwareMap.dcMotor.get("leftRear");
-        rightFront = hardwareMap.dcMotor.get("rightFront");
-        rightRear = hardwareMap.dcMotor.get("rightRear");
-
-        intake = hardwareMap.dcMotor.get("Intake");
-        shooter = hardwareMap.get(DcMotorEx.class, "Shooter");
-        shooter.setDirection(DcMotorSimple.Direction.REVERSE);
-        shooter.setVelocityPIDFCoefficients(Kp, Ki, Kd, Kf);
-
-        shooterServo = hardwareMap.servo.get("shooterServo");
-        gateServo = hardwareMap.servo.get("gateServo");
-        gateServo.setDirection(Servo.Direction.REVERSE);
-        shooterServo.setDirection(Servo.Direction.REVERSE);
-        intake.setDirection(DcMotorSimple.Direction.REVERSE);
-
-        //colorSensor = hardwareMap.colorSensor.get("colorSensor");
-        imu = hardwareMap.get(IMU.class, "imu");
-
-        IMU.Parameters parameters = new IMU.Parameters(
-                new RevHubOrientationOnRobot(
-                        RevHubOrientationOnRobot.LogoFacingDirection.UP,
-                        RevHubOrientationOnRobot.UsbFacingDirection.LEFT
-                )
-        );
-        imu.initialize(parameters);
-        limelight = hardwareMap.get(Limelight3A.class, "limelight");
-        limelight.pipelineSwitch(2);
-        intake.setDirection(DcMotorSimple.Direction.REVERSE);
-        limelight.start();
+        movement.init(hardwareMap);
+        implement.init(constants, hardwareMap);
     }
 
     @Override
     public void start() {
-        pathState = PathState.STARTPOS_SHOOTPOS;
-        intake.setPower(1);
-        shooter.setVelocity(shooterSpeed);
+        constants.pathState = AutonomousConstants.PathState.STARTPOS_SHOOTPOS;
+        implement.setIntakePower(1);
+        implement.setShooterVelocity(constants.nearShooterSpeed);
     }
 
     @Override
     public void loop() {
-        orientation = imu.getRobotYawPitchRollAngles();
-        limelight.updateRobotOrientation(orientation.getYaw(AngleUnit.DEGREES));
-        llResult = limelight.getLatestResult();
+        orientation = movement.imu.getRobotYawPitchRollAngles();
+        implement.updatelimelightOrientation(orientation.getYaw(AngleUnit.DEGREES));
+        llResult = implement.getLimelightResult();
 
         follower.update();
         autonomousPathUpdate();
 
-        telemetry.addData("path state", pathState);
+        telemetry.addData("path state", constants.pathState);
         telemetry.addData("x", follower.getPose().getX());
         telemetry.addData("y", follower.getPose().getY());
         telemetry.addData("heading", Math.toDegrees(follower.getPose().getHeading()));
@@ -335,15 +257,8 @@ public class testAutoRed1 extends OpMode {
     long waitStart = 0;
     boolean waiting = false;
 
-    public void stopall() {
-        intake.setPower(0);
-        shooter.setPower(0);
-        gateServo.setPosition(0);
-        shooterServo.setPosition(0);
-    }
-
     public void autonomousPathUpdate() {
-        switch (pathState) {
+        switch (constants.pathState) {
             case STARTPOS_SHOOTPOS:
                 if (!follower.isBusy() && !waiting) {
                     waitStart = System.currentTimeMillis();
@@ -351,7 +266,7 @@ public class testAutoRed1 extends OpMode {
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 100) {
                     follower.followPath(pathStarttoShoot);
-                    pathState = PathState.SHOOT;
+                    constants.pathState = AutonomousConstants.PathState.SHOOT;
                     waiting = false;
                 }
                 break;
@@ -362,10 +277,9 @@ public class testAutoRed1 extends OpMode {
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 100) {
                     follower.followPath(pathShoottoSecond);
-                    pathState = PathState.COLLECT_SECONDROW;
+                    constants.pathState = AutonomousConstants.PathState.COLLECT_SECONDROW;
                     waiting = false;
-                    intake.setPower(1);
-
+                    implement.setIntakePower(1);
                 }
                 break;
             case COLLECT_SECONDROW:
@@ -374,15 +288,14 @@ public class testAutoRed1 extends OpMode {
                     waiting = true;
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 100) {
-                    follower.followPath(pathSecondCollect, collectSpeed, true);
+                    follower.followPath(pathSecondCollect, constants.collectSpeed, true);
                     boolean contains = Arrays.asList(autoVariations).contains(AutoVariations.SECONDROW_OPEN_GATE);
 
                     if (contains) {
-                        pathState = PathState.SECONDROW_GATEHALF;
+                        constants.pathState = AutonomousConstants.PathState.SECONDROW_GATEHALF;
                     } else {
-                        pathState = PathState.SECONDROW_SHOOTPOS;
+                        constants.pathState = AutonomousConstants.PathState.SECONDROW_SHOOTPOS;
                     }
-                    secondrow = true;
                     waiting = false;
 
                 }
@@ -394,7 +307,7 @@ public class testAutoRed1 extends OpMode {
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 100) {
                     follower.followPath(pathSecondtoShoot);
-                    pathState = PathState.SHOOT;
+                    constants.pathState = AutonomousConstants.PathState.SHOOT;
                     waiting = false;
                 }
                 break;
@@ -405,10 +318,9 @@ public class testAutoRed1 extends OpMode {
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 100) {
                     follower.followPath(pathShoottoFirst);
-                    pathState = PathState.COLLECT_FIRSTROW;
+                    constants.pathState = AutonomousConstants.PathState.COLLECT_FIRSTROW;
                     waiting = false;
-                    intake.setPower(1);
-
+                    implement.setIntakePower(1);
                 }
                 break;
             case SHOOTPOS_THIRDROW:
@@ -419,9 +331,8 @@ public class testAutoRed1 extends OpMode {
                     waiting = true;
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 100) {
-                    follower.followPath(pathFirstCollect, collectSpeed, false);
-                    pathState = PathState.FIRSTROW_SHOOTPOS;
-                    firstrow = true;
+                    follower.followPath(pathFirstCollect, constants.collectSpeed, false);
+                    constants.pathState = AutonomousConstants.PathState.FIRSTROW_SHOOTPOS;
                     waiting = false;
 
                 }
@@ -436,7 +347,7 @@ public class testAutoRed1 extends OpMode {
                 if (waiting && System.currentTimeMillis() - waitStart >= 100) {
                     follower.followPath(pathFirsttoShoot, 0.8, false);
 
-                    pathState = PathState.SHOOT;
+                    constants.pathState = AutonomousConstants.PathState.SHOOT;
                     waiting = false;
                 }
                 break;
@@ -450,7 +361,7 @@ public class testAutoRed1 extends OpMode {
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 100) {
                     follower.followPath(pathShoottoEnd);
-                    pathState = PathState.STOP;
+                    constants.pathState = AutonomousConstants.PathState.STOP;
                     waiting = false;
                 }
                 break;
@@ -461,7 +372,7 @@ public class testAutoRed1 extends OpMode {
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 100) {
                     follower.followPath(pathSecondtoGateHalf);
-                    pathState = PathState.GATEHALF_GATEFINAL;
+                    constants.pathState = AutonomousConstants.PathState.GATEHALF_GATEFINAL;
                     waiting = false;
                 }
                 break;
@@ -473,7 +384,7 @@ public class testAutoRed1 extends OpMode {
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 100) {
                     follower.followPath(pathGateHalftoGateFinal);
-                    pathState = PathState.GATEFINAL_SHOOT;
+                    constants.pathState = AutonomousConstants.PathState.GATEFINAL_SHOOT;
                     waiting = false;
                 }
                 break;
@@ -485,7 +396,7 @@ public class testAutoRed1 extends OpMode {
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 1000) {
                     follower.followPath(pathGateFinaltoShoot);
-                    pathState = PathState.SHOOT;
+                    constants.pathState = AutonomousConstants.PathState.SHOOT;
                     waiting = false;
                 }
                 break;
@@ -497,113 +408,40 @@ public class testAutoRed1 extends OpMode {
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 100) {
                     if (llResult != null && llResult.isValid()){
-                        Pose3D botPose = llResult.getBotpose();
                         telemetry.addData("Tx", llResult.getTx());
                         telemetry.addData("Ty", llResult.getTy());
                         telemetry.addData("Ta", llResult.getTa());
-                        pid_turn_by_gyro(llResult.getTx(), 0.5);
+                        movement.pid_turn_by_gyro(llResult.getTx(), 0.5);
                         telemetry.update();
                     }
-                    shoot();
-//                    follower.update();
-                    intake.setPower(-0.15);
+                    implement.shoot();
+                    implement.setIntakePower(-0.15);
                     sleep(150);
-                    intake.setPower(1);
+                    implement.setIntakePower(1);
                     sleep(250);
-                    shoot();
-//                    follower.update();
+                    implement.shoot();
                     sleep(250);
-                    shoot();
-//                    follower.update();
-//                    if (belly) {
-//                        pathState = PathState.SHOOTPOS_SECONDROW;
-//                        belly = false;
-//                    } else if (secondrow) {
-//                        pathState = PathState.SHOOTPOS_FIRSTROW;
-//                        secondrow = false;
-//                    } else if (firstrow) {
-//                        pathState = PathState.SHOOTPOS_ENDPOSE;
-//                        firstrow = false;
-//
-//                    }
+                    implement.shoot();
                     if (autoVariations[idx] == AutoVariations.FIRSTROW) {
-                        pathState = PathState.SHOOTPOS_FIRSTROW;
+                        constants.pathState = AutonomousConstants.PathState.SHOOTPOS_FIRSTROW;
                     } else if (autoVariations[idx] == AutoVariations.SECONDROW) {
-                        pathState = PathState.SHOOTPOS_SECONDROW;
+                        constants.pathState = AutonomousConstants.PathState.SHOOTPOS_SECONDROW;
                     } else if (autoVariations[idx] == AutoVariations.THIRDROW) {
-                        pathState = PathState.SHOOTPOS_THIRDROW;
+                        constants.pathState = AutonomousConstants.PathState.SHOOTPOS_THIRDROW;
                     } else if (autoVariations[idx] == AutoVariations.SECONDROW_OPEN_GATE) {
-                        pathState = PathState.SHOOTPOS_SECONDROW;
+                        constants.pathState = AutonomousConstants.PathState.SHOOTPOS_SECONDROW;
                     } else if (autoVariations[idx] == AutoVariations.ENDPOSE) {
-                        pathState = PathState.SHOOTPOS_ENDPOSE;
+                        constants.pathState = AutonomousConstants.PathState.SHOOTPOS_ENDPOSE;
                     }
                     idx += 1;
                     waiting = false;
                 }
                 break;
             case STOP:
-                stopall();
+                implement.stopall();
                 break;
             default:
                 break;
         }
-    }
-
-    public void shoot() {
-        intake.setPower(0);
-        gateServo.setPosition(0.3);
-        sleep(100);
-        shooterServo.setPosition(0.35);
-        sleep(250);
-        shooterServo.setPosition(0);
-        sleep(175);
-        gateServo.setPosition(0);
-        sleep(100);
-        intake.setPower(1);
-    }
-    private double getHeading() {
-        double angle = getRawHeading();
-        if (angle > 180) angle -= 360;
-        if (angle < -180) angle += 360;
-        return angle;
-    }
-
-    private double getRawHeading() {
-        YawPitchRollAngles angles = imu.getRobotYawPitchRollAngles();
-        return angles.getYaw(AngleUnit.DEGREES);
-    }
-
-    public void pid_turn_by_gyro(double targetYaw, double speed){
-        targetYaw=-targetYaw;
-        double currentYaw = getHeading();
-        double error;
-        double actYaw = getHeading() + targetYaw;
-        double kp = 0.01;
-        while(Math.abs(actYaw - getHeading()) > 0.85){
-
-            error = kp * (actYaw - getHeading());
-            double power;
-            if(error > 0)
-                power = Math.min(Math.max(error, 0.1), speed);
-            else
-                power = Math.min(Math.max(error, -speed), -0.1);
-
-            telemetry.addLine("Current Heading angle" + getHeading());
-            telemetry.addLine( "Target Angle" + targetYaw);
-            telemetry.addLine("Actual Target Yaw" + actYaw);
-            telemetry.addLine("Actual Power " + power);
-            telemetry.update();
-            setDrivePower(-power, -power, power, power );
-        }
-        setDrivePower(0,0,0,0 );
-
-    }
-
-    private void setDrivePower(double lfPower, double lrPower, double rfPower, double rrPower)
-    {
-        leftFront.setPower(lfPower);
-        leftRear.setPower(lrPower);
-        rightFront.setPower(rfPower);
-        rightRear.setPower(rrPower);
     }
 }

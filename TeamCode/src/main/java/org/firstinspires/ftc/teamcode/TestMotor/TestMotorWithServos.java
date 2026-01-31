@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.TestMotor;
 
+import com.acmerobotics.dashboard.FtcDashboard;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -8,16 +9,19 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 
+@TeleOp
 public class TestMotorWithServos extends LinearOpMode {
     private double shooterSpeedMax = 2450.0;
     private double shooterSpeedMin = 1000.0;
-    private double shooterSpeed;
+    private double shooterSpeed = shooterSpeedMax;
+    private double shooterPower;
     boolean max = false;
     private double power = 0.0;
     private Servo gateServo, shooterServo;
     private DcMotor intake;
-    private DcMotorEx shooter;// = hardwareMap.get(DcMotorEx.class, "Shooter");
+    private DcMotorEx shooter;
     private double Kp = 255.0, Ki = 0.0, Kd = 0.0, Kf = 11.62;
     private long shooter_timer;
     private long steadystate_timer, rise_time;
@@ -26,7 +30,41 @@ public class TestMotorWithServos extends LinearOpMode {
     private boolean timediff_set, steadystate = false;
     private double[] scale = {10, 1, 0.1, 0.01};
     int index = 0;
+    private final FtcDashboard dashboard = FtcDashboard.getInstance();
+    private final Telemetry dashboardTelemetry = dashboard.getTelemetry();
+    /*
+    @Override
+    public void runOpMode(){
+        initHardware();
+        shooterSpeed = 2940;
+        waitForStart();
 
+        intake.setPower(1);
+        shooterPower = 1;
+        shooter.setPower(shooterPower);
+        max = true;
+        shooter_timer = System.currentTimeMillis();
+        while (opModeIsActive()){
+            if(gamepad1.dpadUpWasPressed())
+            {
+                shooterPower += 0.1;
+            }
+            if (gamepad1.dpadDownWasPressed())
+            {
+                shooterPower -= 0.1;
+            }
+            shooter.setPower(shooterPower);
+
+            if (gamepad1.leftBumperWasPressed()){
+                shoot();
+            }
+
+            dashboardTelemetry.addData("Target Velocity", shooterSpeed);
+            dashboardTelemetry.addData("Shooter Velocity", shooter.getVelocity());
+            dashboardTelemetry.update();
+        }
+    }
+    */
     @Override
     public void runOpMode(){
         initHardware();
@@ -47,6 +85,14 @@ public class TestMotorWithServos extends LinearOpMode {
         max = true;
         shooter_timer = System.currentTimeMillis();
         while (opModeIsActive()){
+            if(gamepad1.leftStickButtonWasPressed())
+            {
+                Kp = 1.0;
+                Ki = 0.0;
+                Kd = 0.0;
+                Kf = 0.0;
+                shooter.setVelocityPIDFCoefficients(Kp, Ki, Kd, Kf);
+            }
             if (gamepad1.rightBumperWasPressed())
             {
                 index += 1;
@@ -92,22 +138,22 @@ public class TestMotorWithServos extends LinearOpMode {
                     shooter.setVelocity(shooterSpeed);
                 }
             }
-            /*
-            if (gamepad1.leftBumperWasPressed())
-            {
-                if (max) {
-                    shooterSpeed = shooterSpeedMin;
-                    max = false;
-                }
-                else {
-                    shooterSpeed = shooterSpeedMax;
-                    max = true;
-                }
-                shooter_timer = System.currentTimeMillis();
-                timediff_set = false;
-                rise_time_set = false;
-                shooter.setVelocity(shooterSpeed);
-            }*/
+
+//            if (gamepad1.leftBumperWasPressed())
+//            {
+//                if (max) {
+//                    shooterSpeed = shooterSpeedMin;
+//                    max = false;
+//                }
+//                else {
+//                    shooterSpeed = shooterSpeedMax;
+//                    max = true;
+//                }
+//                shooter_timer = System.currentTimeMillis();
+//                timediff_set = false;
+//                rise_time_set = false;
+//                shooter.setVelocity(shooterSpeed);
+//            }
             if (gamepad1.leftBumperWasPressed()){
                 shoot();
                 //shooterSpeed += 100.0;
@@ -152,6 +198,9 @@ public class TestMotorWithServos extends LinearOpMode {
             telemetry.addLine("steady state flag = " + steadystate);
             telemetry.addLine("TIme to achieve steady state = " + (timediff - 500));
             telemetry.addLine("Rise time " + rise_time);
+            dashboardTelemetry.addData("Target Velocity", shooterSpeed);
+            dashboardTelemetry.addData("Shooter Velocity", shooter.getVelocity());
+            dashboardTelemetry.update();
             telemetry.update();
         }
     }

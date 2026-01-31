@@ -3,16 +3,8 @@ package org.firstinspires.ftc.teamcode.pedroPathing.Autonomous;
 import com.pedropathing.paths.PathChain;
 
 public class AutonomousConstants {
-    public enum AutoVariations {
-        FIRSTROW,
-        SECONDROW,
-        THIRDROW,
-        SECONDROW_OPEN_GATE,
-        ENDPOSE
-    }
-    AutoVariations[] autoVariations = new AutoVariations[5];
 
-    public enum PathState{
+    public enum PathState {
         STARTPOS_SHOOTPOS,
         SHOOTPOS_FIRSTROW,
         SHOOTPOS_SECONDROW,
@@ -30,16 +22,9 @@ public class AutonomousConstants {
         SHOOT,
         STOP
     }
-    public PathChain
-            pathStarttoShoot,
-            pathShoottoSecond,
-            pathSecondCollect,
-            pathSecondtoShoot,
-            pathShoottoFirst,
-            pathFirstCollect,
-            pathFirsttoShoot,
-            pathShoottoEnd,
-            pathSecondtoGateHalf,
-            pathGateHalftoGateFinal,
-            pathGateFinaltoShoot;
+    double collectSpeed = 0.65;
+    PathState pathState;
+    int farShooterSpeed = 2525;
+    int nearShooterSpeed = 2200;
+    double Kp = 255.0, Ki = 0.0, Kd = 0.0, Kf = 11.62;
 }

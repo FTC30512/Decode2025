@@ -5,6 +5,7 @@ import static android.os.SystemClock.sleep;
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
 import com.pedropathing.follower.Follower;
+import com.pedropathing.follower.FollowerConstants;
 import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
@@ -32,11 +33,12 @@ import java.util.List;
 
 @Autonomous(name = "AutoBlue2", group = "Autonomous")
 public class testAutoBlue2 extends OpMode {
-
-    //public static PathConstraints pathConstraints = new PathConstraints(0.3, 100, 4, 5);
     private LLResult llResult;
-
     public Follower follower;
+
+    public AutonomousConstants constants;
+    public AutonomousMovement movement;
+    public AutonomousImplements implement;
     private final Pose startPose = new Pose(56.500, 11.500, Math.toRadians(90));
     private final Pose shootPose = new Pose(58.000, 21.000, Math.toRadians(110));
     private final Pose firstRowStartPose = new Pose(44.000, 87.000, Math.toRadians(0));
@@ -48,25 +50,6 @@ public class testAutoBlue2 extends OpMode {
     private final Pose gatePoseHalf = new Pose(24, 67, Math.toRadians(90));
     private final Pose gatePoseFinal = new Pose(16, 67, Math.toRadians(90));
     private final Pose endPose = new Pose(38.71408250355619, 33.5931721194879, Math.toRadians(180));
-    double collectSpeed = 0.65;
-    private enum PathState{
-        STARTPOS_SHOOTPOS,
-        SHOOTPOS_FIRSTROW,
-        SHOOTPOS_SECONDROW,
-        SHOOTPOS_THIRDROW,
-        COLLECT_FIRSTROW,
-        COLLECT_SECONDROW,
-        SECONDROW_GATEHALF,
-        GATEHALF_GATEFINAL,
-        GATEFINAL_SHOOT,
-        COLLECT_THIRDROW,
-        FIRSTROW_SHOOTPOS,
-        SECONDROW_SHOOTPOS,
-        THIRDROW_SHOOTPOS,
-        SHOOTPOS_ENDPOSE,
-        SHOOT,
-        STOP
-    }
     public enum AutoVariations {
         FIRSTROW,
         SECONDROW,
@@ -74,8 +57,7 @@ public class testAutoBlue2 extends OpMode {
         SECONDROW_OPEN_GATE,
         ENDPOSE
     }
-
-    PathState pathState;
+    AutoVariations[] autoVariations = new AutoVariations[5];
     private int IdNum = 21;
     public PathChain
             pathStarttoShoot,
@@ -89,20 +71,8 @@ public class testAutoBlue2 extends OpMode {
             pathThirdCollect,
             pathThirdtoShoot,
             pathShoottoEnd;
-    private DcMotor leftFront, leftRear, rightFront, rightRear;
     private ColorSensor colorSensor;
     private YawPitchRollAngles orientation;
-
-    private Servo gateServo, shooterServo;
-    private DcMotor intake;
-    private DcMotorEx shooter;
-    private Limelight3A limelight;
-    private int shooterSpeed = 2525;
-    private double Kp = 255.0, Ki = 0.0, Kd = 0.0, Kf = 11.62;
-    //private double Kp = 25.0, Ki = 3.0, Kd = 0.0, Kf = 2.8;
-    private IMU imu;
-    boolean belly, firstrow, secondrow, thirdrow = false;
-    AutoVariations[] autoVariations = new AutoVariations[5];
     int idx = 0;
 
     @Override
@@ -115,57 +85,23 @@ public class testAutoBlue2 extends OpMode {
         follower.setMaxPower(1.0);
 
         buildPaths();
-        pathState = PathState.STARTPOS_SHOOTPOS;
+        constants.pathState = AutonomousConstants.PathState.STARTPOS_SHOOTPOS;
 
-        imu.resetYaw();
-        belly = true;
-        gateServo.setPosition(0);
-        shooterServo.setPosition(0);
         panelsTelemetry.debug("Status", "Initialized");
         panelsTelemetry.update(telemetry);
     }
 
     // --- Hardware initialization ---
     private void initHardware() {
-        intake = hardwareMap.dcMotor.get("Intake");
-        shooter = hardwareMap.get(DcMotorEx.class, "Shooter");
-        shooter.setDirection(DcMotorSimple.Direction.REVERSE);
-        shooter.setVelocityPIDFCoefficients(Kp, Ki, Kd, Kf);
-
-        shooterServo = hardwareMap.servo.get("shooterServo");
-        gateServo = hardwareMap.servo.get("gateServo");
-        gateServo.setDirection(Servo.Direction.REVERSE);
-        shooterServo.setDirection(Servo.Direction.REVERSE);
-        intake.setDirection(DcMotorSimple.Direction.REVERSE);
-
-        leftFront = hardwareMap.dcMotor.get("leftFront");
-        leftRear = hardwareMap.dcMotor.get("leftRear");
-        rightFront = hardwareMap.dcMotor.get("rightFront");
-        rightRear = hardwareMap.dcMotor.get("rightRear");
-
-        //colorSensor = hardwareMap.colorSensor.get("colorSensor");
-        imu = hardwareMap.get(IMU.class, "imu");
-
-        IMU.Parameters parameters = new IMU.Parameters(
-                new RevHubOrientationOnRobot(
-                        RevHubOrientationOnRobot.LogoFacingDirection.UP,
-                        RevHubOrientationOnRobot.UsbFacingDirection.LEFT
-                )
-        );
-
-
-        imu.initialize(parameters);
-        limelight = hardwareMap.get(Limelight3A.class, "limelight");
-        limelight.pipelineSwitch(2);
-        intake.setDirection(DcMotorSimple.Direction.REVERSE);
-        limelight.start();
+        movement.init(hardwareMap);
+        implement.init(constants, hardwareMap);
     }
 
     @Override
     public void init_loop() {
-        orientation = imu.getRobotYawPitchRollAngles();
-        limelight.updateRobotOrientation(orientation.getYaw(AngleUnit.DEGREES));
-        llResult = limelight.getLatestResult();
+        orientation = movement.imu.getRobotYawPitchRollAngles();
+        implement.updatelimelightOrientation(orientation.getYaw(AngleUnit.DEGREES));
+        llResult = implement.getLimelightResult();
         if (llResult != null && llResult.isValid() && !llResult.getFiducialResults().isEmpty()) {
             IdNum = llResult.getFiducialResults().get(0).getFiducialId();
             telemetry.addData("AprilTag ID", IdNum);
@@ -183,7 +119,7 @@ public class testAutoBlue2 extends OpMode {
             case 22:
                 autoVariations[0] = AutoVariations.THIRDROW;
                 autoVariations[1] = AutoVariations.SECONDROW_OPEN_GATE;
-                autoVariations[3] = AutoVariations.ENDPOSE;
+                autoVariations[2] = AutoVariations.ENDPOSE;
                 break;
             default:
                 autoVariations[0] = AutoVariations.THIRDROW;
@@ -191,26 +127,14 @@ public class testAutoBlue2 extends OpMode {
                 autoVariations[2] = AutoVariations.ENDPOSE;
                 break;
         }
-        
-//        if (IdNum == 21){
-//            autoVariations[0] = AutoVariations.THIRDROW;
-//            autoVariations[1] = AutoVariations.SECONDROW;
-//            autoVariations[2] = AutoVariations.ENDPOSE;
-//        }
-//
-//        if (IdNum == 22){
-//            autoVariations[0] = AutoVariations.SECONDROW_OPEN_GATE;
-//            autoVariations[1] = AutoVariations.THIRDROW;
-//            autoVariations[3] = AutoVariations.ENDPOSE;
-//        }
     }
 
     @Override
     public void start() {
-        limelight.pipelineSwitch(1);
-        pathState = PathState.STARTPOS_SHOOTPOS;
-        intake.setPower(1);
-        shooter.setVelocity(shooterSpeed);
+        implement.setLimelightPipeline(1);
+        constants.pathState = AutonomousConstants.PathState.STARTPOS_SHOOTPOS;
+        implement.setIntakePower(1);
+        implement.setShooterVelocity(constants.farShooterSpeed);
     }
 
     @Override
@@ -218,11 +142,10 @@ public class testAutoBlue2 extends OpMode {
         follower.update();
         autonomousPathUpdate();
 
-        orientation = imu.getRobotYawPitchRollAngles();
-        limelight.updateRobotOrientation(orientation.getYaw(AngleUnit.DEGREES));
-        llResult = limelight.getLatestResult();
-
-        telemetry.addData("path state", pathState);
+        orientation = movement.imu.getRobotYawPitchRollAngles();
+        implement.updatelimelightOrientation(orientation.getYaw(AngleUnit.DEGREES));
+        llResult = implement.getLimelightResult();
+        telemetry.addData("path state", constants.pathState);
         telemetry.addData("IdNum", IdNum);
         telemetry.addData("IDX", idx);
         telemetry.addData("Length", autoVariations.length);
@@ -230,7 +153,7 @@ public class testAutoBlue2 extends OpMode {
         telemetry.addData("y", follower.getPose().getY());
         telemetry.addData("is Busy ", follower.isBusy());
         telemetry.addData("is Turning ", follower.isTurning());
-        telemetry.addData("shooter velocity ", shooter.getVelocity());
+        telemetry.addData("shooter velocity ", implement.getShooterVelocity());
         telemetry.addData("heading", Math.toDegrees(follower.getPose().getHeading()));
         telemetry.addData("Max Power", follower.getMaxPowerScaling());
         telemetry.update();
@@ -342,15 +265,8 @@ public class testAutoBlue2 extends OpMode {
     long waitStart = 0;
     boolean waiting = false;
 
-    public void stopall() {
-        intake.setPower(0);
-        shooter.setPower(0);
-        gateServo.setPosition(0);
-        shooterServo.setPosition(0);
-    }
-
     public void autonomousPathUpdate() {
-        switch (pathState) {
+        switch (constants.pathState) {
             case STARTPOS_SHOOTPOS:
                 if (!follower.isBusy() && !waiting) {
                     waitStart = System.currentTimeMillis();
@@ -358,7 +274,7 @@ public class testAutoBlue2 extends OpMode {
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 100) {
                     follower.followPath(pathStarttoShoot);
-                    pathState = PathState.SHOOT;
+                    constants.pathState = AutonomousConstants.PathState.SHOOT;
                     waiting = false;
                 }
                 break;
@@ -369,10 +285,9 @@ public class testAutoBlue2 extends OpMode {
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 100) {
                     follower.followPath(pathShoottoSecond);
-                    pathState = PathState.COLLECT_SECONDROW;
+                    constants.pathState = AutonomousConstants.PathState.COLLECT_SECONDROW;
                     waiting = false;
-                    intake.setPower(1);
-
+                    implement.setIntakePower(1);
                 }
                 break;
             case COLLECT_SECONDROW:
@@ -381,16 +296,15 @@ public class testAutoBlue2 extends OpMode {
                     waiting = true;
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 100) {
-                    follower.followPath(pathSecondCollect, collectSpeed, true);
+                    follower.followPath(pathSecondCollect, constants.collectSpeed, true);
 
                     boolean contains = Arrays.asList(autoVariations).contains(AutoVariations.SECONDROW_OPEN_GATE);
 
                     if (contains) {
-                        pathState = PathState.SECONDROW_GATEHALF;
+                        constants.pathState = AutonomousConstants.PathState.SECONDROW_GATEHALF;
                     } else {
-                        pathState = PathState.SECONDROW_SHOOTPOS;
+                        constants.pathState = AutonomousConstants.PathState.SECONDROW_SHOOTPOS;
                     }
-                    secondrow = true;
                     waiting = false;
 
                 }
@@ -402,7 +316,7 @@ public class testAutoBlue2 extends OpMode {
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 100) {
                     follower.followPath(pathSecondtoShoot, 0.8, false);
-                    pathState = PathState.SHOOT;
+                    constants.pathState = AutonomousConstants.PathState.SHOOT;
                     waiting = false;
                 }
                 break;
@@ -413,10 +327,9 @@ public class testAutoBlue2 extends OpMode {
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 100) {
                     follower.followPath(pathShoottoThird);
-                    pathState = PathState.COLLECT_THIRDROW;
+                    constants.pathState = AutonomousConstants.PathState.COLLECT_THIRDROW;
                     waiting = false;
-                    intake.setPower(1);
-
+                    implement.setIntakePower(1);
                 }
                 break;
             case COLLECT_THIRDROW:
@@ -425,9 +338,8 @@ public class testAutoBlue2 extends OpMode {
                     waiting = true;
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 100) {
-                    follower.followPath(pathThirdCollect, collectSpeed, true);
-                    pathState = PathState.THIRDROW_SHOOTPOS;
-                    thirdrow = true;
+                    follower.followPath(pathThirdCollect, constants.collectSpeed, true);
+                    constants.pathState = AutonomousConstants.PathState.THIRDROW_SHOOTPOS;
                     waiting = false;
 
                 }
@@ -439,7 +351,7 @@ public class testAutoBlue2 extends OpMode {
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 100) {
                     follower.followPath(pathThirdtoShoot, 0.8, false);
-                    pathState = PathState.SHOOT;
+                    constants.pathState = AutonomousConstants.PathState.SHOOT;
                     waiting = false;
                 }
                 break;
@@ -451,7 +363,7 @@ public class testAutoBlue2 extends OpMode {
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 100) {
                     follower.followPath(pathShoottoEnd);
-                    pathState = PathState.STOP;
+                    constants.pathState = AutonomousConstants.PathState.STOP;
                     waiting = false;
                 }
                 break;
@@ -463,7 +375,7 @@ public class testAutoBlue2 extends OpMode {
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 100) {
                     follower.followPath(pathSecondtoGateHalf);
-                    pathState = PathState.GATEHALF_GATEFINAL;
+                    constants.pathState = AutonomousConstants.PathState.GATEHALF_GATEFINAL;
                     waiting = false;
                 }
                 break;
@@ -475,7 +387,7 @@ public class testAutoBlue2 extends OpMode {
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 100) {
                     follower.followPath(pathGateHalftoGateFinal);
-                    pathState = PathState.GATEFINAL_SHOOT;
+                    constants.pathState = AutonomousConstants.PathState.GATEFINAL_SHOOT;
                     waiting = false;
                 }
                 break;
@@ -487,146 +399,54 @@ public class testAutoBlue2 extends OpMode {
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 1000) {
                     follower.followPath(pathGateFinaltoShoot);
-                    pathState = PathState.SHOOT;
+                    constants.pathState = AutonomousConstants.PathState.SHOOT;
                     waiting = false;
                 }
                 break;
 
             case SHOOT:
                 if (!follower.isBusy() && !waiting) {
-                    /*
-                    if (follower.getPose().getHeading() > shootPose.getHeading() + Math.toRadians(2) ||
-                            follower.getPose().getHeading() < shootPose.getHeading() - Math.toRadians(2) ){
-                        double amount_of_turn = follower.getPose().getHeading() - shootPose.getHeading();
-                        boolean isLeft = false;
-                        if(amount_of_turn < 0)
-                        {
-                            isLeft = true;
-                            amount_of_turn = -1*amount_of_turn;
-                        }
-
-                        follower.turnDegrees(amount_of_turn, isLeft);
-                    }
-                    else{}
-                        */
-//                    follower.breakFollowing();
                     waitStart = System.currentTimeMillis();
                     waiting = true;
+                    follower.breakFollowing();
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 100) {
                     if (llResult != null && llResult.isValid()){
-                        Pose3D botPose = llResult.getBotpose();
                         telemetry.addData("Tx", llResult.getTx());
                         telemetry.addData("Ty", llResult.getTy());
                         telemetry.addData("Ta", llResult.getTa());
-                        pid_turn_by_gyro(llResult.getTx(), 0.5);
+                        movement.pid_turn_by_gyro(llResult.getTx(), 0.5);
                         telemetry.update();
                     }
-                    //sleep(500);
-                    shoot();
-//                    follower.update();
-                    intake.setPower(-0.15);
+                    implement.shoot();
+                    implement.setIntakePower(-0.15);
                     sleep(150);
-                    intake.setPower(1);
+                    implement.setIntakePower(1);
                     sleep(250);
-                    shoot();
-//                    follower.update();
+                    implement.shoot();
                     sleep(250);
-                    shoot();
-//                    follower.update();
+                    implement.shoot();
 
                     if (autoVariations[idx] == AutoVariations.FIRSTROW) {
-                        pathState = PathState.SHOOTPOS_FIRSTROW;
+                        constants.pathState = AutonomousConstants.PathState.SHOOTPOS_FIRSTROW;
                     } else if (autoVariations[idx] == AutoVariations.SECONDROW) {
-                        pathState = PathState.SHOOTPOS_SECONDROW;
+                        constants.pathState = AutonomousConstants.PathState.SHOOTPOS_SECONDROW;
                     } else if (autoVariations[idx] == AutoVariations.THIRDROW) {
-                        pathState = PathState.SHOOTPOS_THIRDROW;
+                        constants.pathState = AutonomousConstants.PathState.SHOOTPOS_THIRDROW;
                     } else if (autoVariations[idx] == AutoVariations.SECONDROW_OPEN_GATE) {
-                        pathState = PathState.SHOOTPOS_SECONDROW;
+                        constants.pathState = AutonomousConstants.PathState.SHOOTPOS_SECONDROW;
                     } else if (autoVariations[idx] == AutoVariations.ENDPOSE) {
-                        pathState = PathState.SHOOTPOS_ENDPOSE;
+                        constants.pathState = AutonomousConstants.PathState.SHOOTPOS_ENDPOSE;
                     }
                     idx += 1;
-
-
-//                    if(belly){
-//                        pathState = PathState.SHOOTPOS_SECONDROW;
-//                        belly = false;
-//                    }
-//                    else if(secondrow) {
-//                        pathState = PathState.SHOOTPOS_THIRDROW;
-//                        secondrow = false;
-//                    }
-//                    else if(thirdrow) {
-//                        pathState = PathState.SHOOTPOS_ENDPOSE;
-//                        thirdrow = false;
-//                    }
                     waiting = false;
                 }
                 break;
             case STOP:
-                stopall();
+                implement.stopall();
                 break;
             default:
                 break;
         }
-    }
-
-    public void shoot() {
-        intake.setPower(0);
-        gateServo.setPosition(0.3);
-        sleep(100);
-        shooterServo.setPosition(0.35);
-        sleep(250);
-        shooterServo.setPosition(0);
-        sleep(175);
-        gateServo.setPosition(0);
-        sleep(100);
-        intake.setPower(1);
-    }
-    private double getHeading() {
-        double angle = getRawHeading();
-        if (angle > 180) angle -= 360;
-        if (angle < -180) angle += 360;
-        return angle;
-    }
-
-    private double getRawHeading() {
-        YawPitchRollAngles angles = imu.getRobotYawPitchRollAngles();
-        return angles.getYaw(AngleUnit.DEGREES);
-    }
-
-    public void pid_turn_by_gyro(double targetYaw, double speed){
-        targetYaw=-targetYaw;
-        double currentYaw = getHeading();
-        double error;
-        double actYaw = getHeading() + targetYaw;
-        double kp = 0.01;
-        while(Math.abs(actYaw - getHeading()) > 0.85){
-
-            error = kp * (actYaw - getHeading());
-            double power;
-            if(error > 0)
-                power = Math.min(Math.max(error, 0.1), speed);
-            else
-                power = Math.min(Math.max(error, -speed), -0.1);
-
-            telemetry.addLine("Current Heading angle" + getHeading());
-            telemetry.addLine( "Target Angle" + targetYaw);
-            telemetry.addLine("Actual Target Yaw" + actYaw);
-            telemetry.addLine("Actual Power " + power);
-            telemetry.update();
-            setDrivePower(-power, -power, power, power );
-        }
-        setDrivePower(0,0,0,0 );
-
-    }
-
-    private void setDrivePower(double lfPower, double lrPower, double rfPower, double rrPower)
-    {
-        leftFront.setPower(lfPower);
-        leftRear.setPower(lrPower);
-        rightFront.setPower(rfPower);
-        rightRear.setPower(rrPower);
     }
 }
