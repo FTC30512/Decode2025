@@ -78,6 +78,8 @@ public class testAutoBlue2 extends OpMode {
     @Override
     public void init() {
         initHardware();
+        implement.setLimelightPipeline(2);
+
         TelemetryManager panelsTelemetry = PanelsTelemetry.INSTANCE.getTelemetry();
 
         follower = Constants.createFollower(hardwareMap);
@@ -90,8 +92,8 @@ public class testAutoBlue2 extends OpMode {
         panelsTelemetry.debug("Status", "Initialized");
         panelsTelemetry.update(telemetry);
 
-        autoVariations[0] = AutoVariations.THIRDROW;
-        autoVariations[1] = AutoVariations.SECONDROW;
+        autoVariations[0] = AutoVariations.SECONDROW_OPEN_GATE;
+        autoVariations[1] = AutoVariations.THIRDROW;
         autoVariations[2] = AutoVariations.ENDPOSE;
     }
 

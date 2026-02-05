@@ -36,12 +36,12 @@ public class testAutoRed1 extends OpMode {
     public AutonomousMovement movement = new AutonomousMovement();
     public AutonomousImplements implement = new AutonomousImplements();
     private final Pose startPose = new Pose(124.8, 126.8, Math.toRadians(43.8));
-//    private final Pose startPose = new Pose(87.5, 138.5, Math.toRadians(90));
-    private final Pose shootPose = new Pose(87.000, 86.000, Math.toRadians(45));
-    private final Pose firstRowStartPose = new Pose(100.000, 87.000, Math.toRadians(180));
-    private final Pose firstRowEndPose = new Pose(120.000, 87.000, Math.toRadians(180));
-    private final Pose secondRowStartPose = new Pose(100.000, 64.000, Math.toRadians(180));
-    private final Pose secondRowEndPose = new Pose(120.000, 64.000, Math.toRadians(180));
+    //    private final Pose startPose = new Pose(87.5, 138.5, Math.toRadians(90));
+    private final Pose shootPose = new Pose(90, 86.000, Math.toRadians(45));
+    private final Pose firstRowStartPose = new Pose(98.000, 88.000, Math.toRadians(180));
+    private final Pose firstRowEndPose = new Pose(125, 88.000, Math.toRadians(180));
+    private final Pose secondRowStartPose = new Pose(98.000, 64.000, Math.toRadians(180));
+    private final Pose secondRowEndPose = new Pose(135, 64.000, Math.toRadians(180));
     private final Pose thirdRowStartPose = new Pose(100.000, 39.000, Math.toRadians(180));
     private final Pose thirdRowEndPose = new Pose(120.000, 39.000, Math.toRadians(180));
     private final Pose gatePoseHalf = new Pose(144-24, 67, Math.toRadians(90));
@@ -54,7 +54,6 @@ public class testAutoRed1 extends OpMode {
         SECONDROW_OPEN_GATE,
         ENDPOSE
     }
-    private LLResult llResult;
     public PathChain
             pathStarttoShoot,
             pathShoottoSecond,
@@ -67,18 +66,21 @@ public class testAutoRed1 extends OpMode {
             pathSecondtoGateHalf,
             pathGateHalftoGateFinal,
             pathGateFinaltoShoot;
-    private YawPitchRollAngles orientation;
     private int IdNum;
+    private LLResult llResult;
+    private YawPitchRollAngles orientation;
     AutoVariations[] autoVariations = new AutoVariations[5];
     int idx = 0;
 
     @Override
     public void init() {
         initHardware();
+        implement.setLimelightPipeline(2);
+
         TelemetryManager panelsTelemetry = PanelsTelemetry.INSTANCE.getTelemetry();
 
         follower = Constants.createFollower(hardwareMap);
-        follower.setStartingPose(startPose);
+        //follower.setStartingPose(startPose);
         follower.setMaxPower(1.0);
 
         buildPaths();
@@ -87,11 +89,19 @@ public class testAutoRed1 extends OpMode {
         panelsTelemetry.debug("Status", "Initialized");
         panelsTelemetry.update(telemetry);
 
-        autoVariations[0] = AutoVariations.THIRDROW;
-        autoVariations[1] = AutoVariations.SECONDROW;
+        autoVariations[0] = AutoVariations.SECONDROW;
+        autoVariations[1] = AutoVariations.FIRSTROW;
         autoVariations[2] = AutoVariations.ENDPOSE;
 
     }
+    // --- Hardware initialization ---
+    private void initHardware() {
+        movement.init(hardwareMap);
+        implement.init(constants, hardwareMap);
+    }
+
+
+    @Override
     public void init_loop() {
         orientation = movement.imu.getRobotYawPitchRollAngles();
         implement.updatelimelightOrientation(orientation.getYaw(AngleUnit.DEGREES));
@@ -113,34 +123,29 @@ public class testAutoRed1 extends OpMode {
             case 1:
                 autoVariations[0] = AutoVariations.SECONDROW_OPEN_GATE;
                 autoVariations[1] = AutoVariations.FIRSTROW;
-                autoVariations[3] = AutoVariations.ENDPOSE;
+                autoVariations[2] = AutoVariations.ENDPOSE;
                 break;
             default:
                 break;
         }
     }
-
-    // --- Hardware initialization ---
-    private void initHardware() {
-        movement.init(hardwareMap);
-        implement.init(constants, hardwareMap);
-    }
-
     @Override
     public void start() {
+        follower.setStartingPose(startPose);
         constants.pathState = AutonomousConstants.PathState.STARTPOS_SHOOTPOS;
+        implement.setLimelightPipeline(1);
         implement.setIntakePower(1);
         implement.setShooterVelocity(constants.nearShooterSpeed);
     }
 
     @Override
     public void loop() {
+        follower.update();
+        autonomousPathUpdate();
+
         orientation = movement.imu.getRobotYawPitchRollAngles();
         implement.updatelimelightOrientation(orientation.getYaw(AngleUnit.DEGREES));
         llResult = implement.getLimelightResult();
-
-        follower.update();
-        autonomousPathUpdate();
 
         telemetry.addData("path state", constants.pathState);
         telemetry.addData("x", follower.getPose().getX());
@@ -185,9 +190,8 @@ public class testAutoRed1 extends OpMode {
         pathSecondtoShoot = follower
                 .pathBuilder()
                 .addPath(
-                        new BezierCurve(
+                        new BezierLine(
                                 secondRowEndPose,
-                                new Pose(64, 63),
                                 shootPose
                         )
                 )
@@ -217,6 +221,7 @@ public class testAutoRed1 extends OpMode {
                         new BezierLine(firstRowEndPose, shootPose)
                 )
                 .setLinearHeadingInterpolation(firstRowEndPose.getHeading(), shootPose.getHeading())
+                .setHeadingConstraint(0.0001)
                 .build();
 
         pathShoottoEnd = follower
@@ -325,8 +330,6 @@ public class testAutoRed1 extends OpMode {
                     implement.setIntakePower(1);
                 }
                 break;
-            case SHOOTPOS_THIRDROW:
-                break;
             case COLLECT_FIRSTROW:
                 if (!follower.isBusy() && !waiting) {
                     waitStart = System.currentTimeMillis();
@@ -339,21 +342,21 @@ public class testAutoRed1 extends OpMode {
 
                 }
                 break;
-            case COLLECT_THIRDROW:
-                break;
             case FIRSTROW_SHOOTPOS:
                 if (!follower.isBusy() && !waiting) {
                     waitStart = System.currentTimeMillis();
                     waiting = true;
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 100) {
-                    follower.followPath(pathFirsttoShoot, 0.8, false);
-
+                    follower.followPath(pathFirsttoShoot);
                     constants.pathState = AutonomousConstants.PathState.SHOOT;
                     waiting = false;
                 }
                 break;
-
+            case SHOOTPOS_THIRDROW:
+                break;
+            case COLLECT_THIRDROW:
+                break;
             case THIRDROW_SHOOTPOS:
                 break;
             case SHOOTPOS_ENDPOSE:
@@ -406,7 +409,6 @@ public class testAutoRed1 extends OpMode {
                 if (!follower.isBusy() && !waiting) {
                     waitStart = System.currentTimeMillis();
                     waiting = true;
-                    follower.breakFollowing();
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 100) {
                     if (llResult != null && llResult.isValid()){

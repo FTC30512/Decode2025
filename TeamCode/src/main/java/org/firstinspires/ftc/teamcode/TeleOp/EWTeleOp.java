@@ -129,7 +129,7 @@ public class EWTeleOp extends LinearOpMode {
                 if (llResult.getTa() > 0.315) {
                     shooterSpeed = (-275 * llResult.getTa()) + 2557.5;
                 }else {
-                    shooterSpeed = 2800;
+                    shooterSpeed = 2900;
                 }
             }
             shooter.setVelocity(shooterSpeed);
@@ -224,13 +224,20 @@ public class EWTeleOp extends LinearOpMode {
     public void shoot() {
         pid_turn_by_gyro(llResult.getTx()+1, 0.5);
         intake.setPower(0);
-        gateServo.setPosition(0.3);
-        sleep(100);
+        while(shooter.getVelocity() < shooterSpeed - 50)
+        {
+            sleep(10);
+        }
+//        gateServo.setPosition(0.3);
+//        sleep(100);
         shooterServo.setPosition(0.35);
         sleep(250);
         shooterServo.setPosition(0);
-        sleep(175);
-        gateServo.setPosition(0);
+        sleep(250);
+//        sleep(175);
+//        gateServo.setPosition(0);
+//        sleep(100);
+        intake.setPower(-0.25);
         sleep(100);
         intake.setPower(1);
     }

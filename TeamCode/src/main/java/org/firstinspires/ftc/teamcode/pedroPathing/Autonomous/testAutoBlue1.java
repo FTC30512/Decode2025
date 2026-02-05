@@ -38,18 +38,18 @@ public class testAutoBlue1 extends OpMode {
     public AutonomousConstants constants = new AutonomousConstants();
     public AutonomousMovement movement = new AutonomousMovement();
     public AutonomousImplements implement = new AutonomousImplements();
-//    private final Pose startPose = new Pose(56.5, 138.5, Math.toRadians(90));
+    //private final Pose initPose = new Pose(39.5, 138.5, Math.toRadians(90));
     private final Pose startPose = new Pose(19.6, 126.6, Math.toRadians(140.3));
     private final Pose shootPose = new Pose(57.000, 86.000, Math.toRadians(135));
-    private final Pose firstRowStartPose = new Pose(44.000, 87.000, Math.toRadians(0));
-    private final Pose firstRowEndPose = new Pose(25.000, 87.000, Math.toRadians(0));
-    private final Pose secondRowStartPose = new Pose(44.000, 63.500, Math.toRadians(0));
-    private final Pose secondRowEndPose = new Pose(22.000, 63.500, Math.toRadians(0));
-    private final Pose gatePoseHalf = new Pose(24, 67, Math.toRadians(90));
-    private final Pose gatePoseFinal = new Pose(16, 67, Math.toRadians(90));
+    private final Pose firstRowStartPose = new Pose(52, 87.000, Math.toRadians(0));
+    private final Pose firstRowEndPose = new Pose(20, 87.000, Math.toRadians(0));
+    private final Pose secondRowStartPose = new Pose(48, 63.500, Math.toRadians(0));
+    private final Pose secondRowEndPose = new Pose(13, 63.500, Math.toRadians(0));
+    private final Pose gatePoseHalf = new Pose(26, 71.5, Math.toRadians(90));
+    private final Pose gatePoseFinal = new Pose(17, 71.5, Math.toRadians(90));
     private final Pose thirdRowStartPose = new Pose(44.000, 38.000, Math.toRadians(0));
     private final Pose thirdRowEndPose = new Pose(22.000, 38.000, Math.toRadians(0));
-//    private final Pose endPose = new Pose(48, 128, Math.toRadians(180));
+    //    private final Pose endPose = new Pose(48, 128, Math.toRadians(180));
     private final Pose endPose = new Pose(48, 72, Math.toRadians(180));
     public enum AutoVariations {
         FIRSTROW,
@@ -79,10 +79,12 @@ public class testAutoBlue1 extends OpMode {
     @Override
     public void init() {
         initHardware();
+        implement.setLimelightPipeline(2);
+
         TelemetryManager panelsTelemetry = PanelsTelemetry.INSTANCE.getTelemetry();
 
         follower = Constants.createFollower(hardwareMap);
-        follower.setStartingPose(startPose);
+        //follower.setStartingPose(initPose);
         follower.setMaxPower(1.0);
 
         buildPaths();
@@ -91,8 +93,8 @@ public class testAutoBlue1 extends OpMode {
         panelsTelemetry.debug("Status", "Initialized");
         panelsTelemetry.update(telemetry);
 
-        autoVariations[0] = AutoVariations.FIRSTROW;
-        autoVariations[1] = AutoVariations.SECONDROW;
+        autoVariations[0] = AutoVariations.SECONDROW;
+        autoVariations[1] = AutoVariations.FIRSTROW;
         autoVariations[2] = AutoVariations.ENDPOSE;
 
     }
@@ -105,6 +107,7 @@ public class testAutoBlue1 extends OpMode {
 
     @Override
     public void init_loop() {
+        //follower.update();
         orientation = movement.imu.getRobotYawPitchRollAngles();
         implement.updatelimelightOrientation(orientation.getYaw(AngleUnit.DEGREES));
         llResult = implement.getLimelightResult();
@@ -114,12 +117,16 @@ public class testAutoBlue1 extends OpMode {
         } else {
             telemetry.addLine("No AprilTag detected");
         }
+
+        telemetry.addData("x", follower.getPose().getX());
+        telemetry.addData("y", follower.getPose().getY());
+        telemetry.addData("heading", follower.getHeading());
         telemetry.update();
 
         switch (IdNum) {
             case 0:
-                autoVariations[0] = AutoVariations.FIRSTROW;
-                autoVariations[1] = AutoVariations.SECONDROW;
+                autoVariations[0] = AutoVariations.SECONDROW;
+                autoVariations[1] = AutoVariations.FIRSTROW;
                 autoVariations[2] = AutoVariations.ENDPOSE;
                 break;
             case 1:
@@ -133,6 +140,7 @@ public class testAutoBlue1 extends OpMode {
     }
     @Override
     public void start() {
+        follower.setStartingPose(startPose);
         constants.pathState = AutonomousConstants.PathState.STARTPOS_SHOOTPOS;
         implement.setLimelightPipeline(1);
         implement.setIntakePower(1);
@@ -191,9 +199,8 @@ public class testAutoBlue1 extends OpMode {
         pathSecondtoShoot = follower
                 .pathBuilder()
                 .addPath(
-                        new BezierCurve(
+                        new BezierLine(
                                 secondRowEndPose,
-                                new Pose(64, 63),
                                 shootPose
                         )
                 )
@@ -201,6 +208,38 @@ public class testAutoBlue1 extends OpMode {
                 .setLinearHeadingInterpolation(secondRowEndPose.getHeading(), shootPose.getHeading())
                 .build();
 
+        pathShoottoFirst = follower
+                .pathBuilder()
+                .addPath(
+                        new BezierLine(shootPose, firstRowStartPose)
+                )
+                .setLinearHeadingInterpolation(shootPose.getHeading(), firstRowStartPose.getHeading())
+                .build();
+
+        pathFirstCollect = follower
+                .pathBuilder()
+                .addPath(
+                        new BezierLine(firstRowStartPose, firstRowEndPose)
+                )
+                .setLinearHeadingInterpolation(firstRowStartPose.getHeading(), firstRowEndPose.getHeading())
+                .build();
+
+        pathFirsttoShoot = follower
+                .pathBuilder()
+                .addPath(
+                        new BezierLine(firstRowEndPose, shootPose)
+                )
+                .setLinearHeadingInterpolation(firstRowEndPose.getHeading(), shootPose.getHeading())
+                .setHeadingConstraint(0.0001)
+                .build();
+
+        pathShoottoEnd = follower
+                .pathBuilder()
+                .addPath(
+                        new BezierLine(shootPose, endPose)
+                )
+                .setLinearHeadingInterpolation(shootPose.getHeading(), endPose.getHeading())
+                .build();
         pathSecondtoGateHalf = follower
                 .pathBuilder()
                 .addPath(
@@ -229,46 +268,6 @@ public class testAutoBlue1 extends OpMode {
                 .setHeadingConstraint(0.0001)
                 .setLinearHeadingInterpolation(gatePoseFinal.getHeading(), shootPose.getHeading())
                 .build();
-
-        pathShoottoEnd = follower
-                .pathBuilder()
-                .addPath(
-                        new BezierLine(shootPose, endPose)
-                )
-                .setLinearHeadingInterpolation(shootPose.getHeading(), endPose.getHeading())
-                .build();
-
-        pathShoottoFirst = follower
-                .pathBuilder()
-                .addPath(
-                        new BezierLine(shootPose, firstRowStartPose)
-                )
-                .setLinearHeadingInterpolation(shootPose.getHeading(), firstRowStartPose.getHeading())
-                .build();
-
-        pathFirstCollect = follower
-                .pathBuilder()
-                .addPath(
-                        new BezierLine(firstRowStartPose, firstRowEndPose)
-                )
-                .setLinearHeadingInterpolation(firstRowStartPose.getHeading(), firstRowEndPose.getHeading())
-                .build();
-
-        pathFirsttoShoot = follower
-                .pathBuilder()
-                .addPath(
-                        new BezierLine(firstRowEndPose, shootPose)
-                )
-                .setLinearHeadingInterpolation(firstRowEndPose.getHeading(), shootPose.getHeading())
-                .build();
-
-        pathShoottoEnd = follower
-                .pathBuilder()
-                .addPath(
-                        new BezierLine(shootPose, endPose)
-                )
-                .setLinearHeadingInterpolation(shootPose.getHeading(), endPose.getHeading())
-                .build();
     }
     long waitStart = 0;
     boolean waiting = false;
@@ -296,7 +295,6 @@ public class testAutoBlue1 extends OpMode {
                     constants.pathState = AutonomousConstants.PathState.COLLECT_SECONDROW;
                     waiting = false;
                     implement.setIntakePower(1);
-
                 }
                 break;
             case COLLECT_SECONDROW:
@@ -306,7 +304,6 @@ public class testAutoBlue1 extends OpMode {
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 100) {
                     follower.followPath(pathSecondCollect, constants.collectSpeed, true);
-
                     boolean contains = Arrays.asList(autoVariations).contains(AutoVariations.SECONDROW_OPEN_GATE);
 
                     if (contains) {
@@ -339,10 +336,7 @@ public class testAutoBlue1 extends OpMode {
                     constants.pathState = AutonomousConstants.PathState.COLLECT_FIRSTROW;
                     waiting = false;
                     implement.setIntakePower(1);
-
                 }
-                break;
-            case SHOOTPOS_THIRDROW:
                 break;
             case COLLECT_FIRSTROW:
                 if (!follower.isBusy() && !waiting) {
@@ -356,17 +350,31 @@ public class testAutoBlue1 extends OpMode {
 
                 }
                 break;
-            case COLLECT_THIRDROW:
-                break;
             case FIRSTROW_SHOOTPOS:
                 if (!follower.isBusy() && !waiting) {
                     waitStart = System.currentTimeMillis();
                     waiting = true;
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 100) {
-                    follower.followPath(pathFirsttoShoot, 0.8, false);
-
+                    follower.followPath(pathFirsttoShoot, 0.9, false);
                     constants.pathState = AutonomousConstants.PathState.SHOOT;
+                    waiting = false;
+                }
+                break;
+            case SHOOTPOS_THIRDROW:
+                break;
+            case COLLECT_THIRDROW:
+                break;
+            case THIRDROW_SHOOTPOS:
+                break;
+            case SHOOTPOS_ENDPOSE:
+                if (!follower.isBusy() && !waiting) {
+                    waitStart = System.currentTimeMillis();
+                    waiting = true;
+                }
+                if (waiting && System.currentTimeMillis() - waitStart >= 100) {
+                    follower.followPath(pathShoottoEnd);
+                    constants.pathState = AutonomousConstants.PathState.STOP;
                     waiting = false;
                 }
                 break;
@@ -400,22 +408,8 @@ public class testAutoBlue1 extends OpMode {
                     waiting = true;
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 1000) {
-                    follower.followPath(pathGateFinaltoShoot);
+                    follower.followPath(pathGateFinaltoShoot, 0.9, false);
                     constants.pathState = AutonomousConstants.PathState.SHOOT;
-                    waiting = false;
-                }
-                break;
-
-            case THIRDROW_SHOOTPOS:
-                break;
-            case SHOOTPOS_ENDPOSE:
-                if (!follower.isBusy() && !waiting) {
-                    waitStart = System.currentTimeMillis();
-                    waiting = true;
-                }
-                if (waiting && System.currentTimeMillis() - waitStart >= 100) {
-                    follower.followPath(pathShoottoEnd);
-                    constants.pathState = AutonomousConstants.PathState.STOP;
                     waiting = false;
                 }
                 break;
@@ -423,11 +417,9 @@ public class testAutoBlue1 extends OpMode {
                 if (!follower.isBusy() && !waiting) {
                     waitStart = System.currentTimeMillis();
                     waiting = true;
-                    follower.breakFollowing();
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 100) {
                     if (llResult != null && llResult.isValid()){
-                        Pose3D botPose = llResult.getBotpose();
                         telemetry.addData("Tx", llResult.getTx());
                         telemetry.addData("Ty", llResult.getTy());
                         telemetry.addData("Ta", llResult.getTa());

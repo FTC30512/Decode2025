@@ -40,14 +40,14 @@ public class testAutoRed2 extends OpMode {
     public AutonomousImplements implement = new AutonomousImplements();
     private LLResult llResult;
 
-    private final Pose startPose = new Pose(86.499, 11.499, Math.toRadians(90));
-    private final Pose shootPose = new Pose(84.000, 19.000, Math.toRadians(64));
+    private final Pose startPose = new Pose(87.5, 11.5, Math.toRadians(90));
+    private final Pose shootPose = new Pose(86.000, 21.000, Math.toRadians(64));
     private final Pose firstRowStartPose = new Pose(98.000, 60.000, Math.toRadians(180));
     private final Pose firstRowEndPose = new Pose(120.000, 60, Math.toRadians(180));
     private final Pose secondRowStartPose = new Pose(98.000, 60.000, Math.toRadians(180));
-    private final Pose secondRowEndPose = new Pose(120.000, 60.000, Math.toRadians(180));
-    private final Pose thirdRowStartPose = new Pose(98.000, 40.000, Math.toRadians(180));
-    private final Pose thirdRowEndPose = new Pose(120.000, 40.000, Math.toRadians(180));
+    private final Pose secondRowEndPose = new Pose(129.000, 60.000, Math.toRadians(180));
+    private final Pose thirdRowStartPose = new Pose(98.000, 38.000, Math.toRadians(180));
+    private final Pose thirdRowEndPose = new Pose(129.000, 38.000, Math.toRadians(180));
     private final Pose gatePoseHalf = new Pose(144-24, 67, Math.toRadians(90));
     private final Pose gatePoseFinal = new Pose(144-16, 67, Math.toRadians(90));
     private final Pose endPose = new Pose(105.32586660900631, 33.079429420265015, Math.toRadians(0));
@@ -78,6 +78,8 @@ public class testAutoRed2 extends OpMode {
     @Override
     public void init() {
         initHardware();
+        implement.setLimelightPipeline(2);
+
         TelemetryManager panelsTelemetry = PanelsTelemetry.INSTANCE.getTelemetry();
 
         follower = Constants.createFollower(hardwareMap);
@@ -90,8 +92,8 @@ public class testAutoRed2 extends OpMode {
         panelsTelemetry.debug("Status", "Initialized");
         panelsTelemetry.update(telemetry);
 
-        autoVariations[0] = AutoVariations.THIRDROW;
-        autoVariations[1] = AutoVariations.SECONDROW;
+        autoVariations[0] = AutoVariations.SECONDROW_OPEN_GATE;
+        autoVariations[1] = AutoVariations.THIRDROW;
         autoVariations[2] = AutoVariations.ENDPOSE;
     }
 
@@ -411,7 +413,7 @@ public class testAutoRed2 extends OpMode {
                         telemetry.addData("Tx", llResult.getTx());
                         telemetry.addData("Ty", llResult.getTy());
                         telemetry.addData("Ta", llResult.getTa());
-                        movement.pid_turn_by_gyro(llResult.getTx(), 0.5);
+                        movement.pid_turn_by_gyro(llResult.getTx()+3, 0.5);
                         telemetry.update();
                     }
                     implement.shoot();

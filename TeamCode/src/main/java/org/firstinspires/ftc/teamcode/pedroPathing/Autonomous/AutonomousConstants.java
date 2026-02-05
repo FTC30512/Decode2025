@@ -25,6 +25,6 @@ public class AutonomousConstants {
     double collectSpeed = 0.65;
     PathState pathState;
     int farShooterSpeed = 2525;
-    int nearShooterSpeed = 2200;
+    int nearShooterSpeed = 2300;
     double Kp = 255.0, Ki = 0.0, Kd = 0.0, Kf = 11.62;
 }

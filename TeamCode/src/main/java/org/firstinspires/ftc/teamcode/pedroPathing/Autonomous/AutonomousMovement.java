@@ -29,7 +29,6 @@ public class AutonomousMovement {
                         RevHubOrientationOnRobot.UsbFacingDirection.LEFT
                 )
         );
-
         imu.initialize(parameters);
         imu.resetYaw();
     }
@@ -54,9 +53,9 @@ public class AutonomousMovement {
             error = kp * (actYaw - getHeading());
             double power;
             if(error > 0)
-                power = Math.min(Math.max(error, 0.1), speed);
+                power = Math.min(Math.max(error, 0.15), speed);
             else
-                power = Math.min(Math.max(error, -speed), -0.1);
+                power = Math.min(Math.max(error, -speed), -0.15);
 
             setDrivePower(-power, -power, power, power );
         }
