@@ -413,7 +413,7 @@ public class testAutoRed2 extends OpMode {
                         telemetry.addData("Tx", llResult.getTx());
                         telemetry.addData("Ty", llResult.getTy());
                         telemetry.addData("Ta", llResult.getTa());
-                        movement.pid_turn_by_gyro(llResult.getTx()+3, 0.5);
+                        movement.pid_turn_by_gyro(llResult.getTx(),3.0, 0.5);
                         telemetry.update();
                     }
                     implement.shoot();

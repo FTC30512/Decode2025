@@ -173,7 +173,7 @@ public class testAutoBlue2 extends OpMode {
                 .setLinearHeadingInterpolation(startPose.getHeading(), shootPose.getHeading())
                 .build();
 
-        
+
         pathShoottoSecond = follower
                 .pathBuilder()
                 .addPath(
@@ -181,7 +181,7 @@ public class testAutoBlue2 extends OpMode {
                 )
                 .setLinearHeadingInterpolation(shootPose.getHeading(), secondRowStartPose.getHeading())
                 .build();
-        
+
         pathSecondCollect = follower
                 .pathBuilder()
                 .addPath(
@@ -418,7 +418,7 @@ public class testAutoBlue2 extends OpMode {
                         telemetry.addData("Tx", llResult.getTx());
                         telemetry.addData("Ty", llResult.getTy());
                         telemetry.addData("Ta", llResult.getTa());
-                        movement.pid_turn_by_gyro(llResult.getTx(), 0.5);
+                        movement.pid_turn_by_gyro(llResult.getTx(), 0.0,0.5);
                         telemetry.update();
                     }
                     implement.shoot();

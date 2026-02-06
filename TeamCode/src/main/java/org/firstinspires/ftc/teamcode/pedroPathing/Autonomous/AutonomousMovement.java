@@ -43,8 +43,8 @@ public class AutonomousMovement {
         return angles.getYaw(AngleUnit.DEGREES);
     }
 
-    public void pid_turn_by_gyro(double targetYaw, double speed){
-        targetYaw=-targetYaw;
+    public void pid_turn_by_gyro(double targetYaw, double offset, double speed){
+        targetYaw=-(targetYaw + offset);
         double currentYaw = getHeading();
         double error;
         double actYaw = getHeading() + targetYaw;
