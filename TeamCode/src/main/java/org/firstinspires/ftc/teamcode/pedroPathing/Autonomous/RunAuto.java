@@ -70,6 +70,7 @@ public class RunAuto extends OpMode {
             gate_to_shoot_speed = 1.0,
             collectSpeed = 0.65;
     double offset = 0.0;
+    int april_tag_id = 20;
     boolean break_following_after_shoot = true;
     @Override
     public void init(){
@@ -107,6 +108,7 @@ public class RunAuto extends OpMode {
             autoPose = AutoPose.AUTO_BLUE_1;
             autoMap = constants.AutoBlue1;
             Pose gatetoshootcp = new Pose(64, 63);
+            april_tag_id = 20;
             buildPaths(null, gatetoshootcp);
             switch (IdNum) {
                 case 0:
@@ -132,6 +134,7 @@ public class RunAuto extends OpMode {
             autoMap = constants.AutoRed1;
             Pose gatetoshootcp = new Pose(80, 63);
             buildPaths(null, gatetoshootcp);
+            april_tag_id = 24;
             switch (IdNum){
                 case 4:
                     autoVariations[0] = AutoVariations.SECONDROW;
@@ -154,6 +157,7 @@ public class RunAuto extends OpMode {
             Pose gatetoshootcp = new Pose(84.40694769008739, 63.48483482567039);
             Pose secondtoshootcp = new Pose(84.40694769008739, 63.48483482567039);
             buildPaths(secondtoshootcp, gatetoshootcp);
+            april_tag_id = 24;
             switch (IdNum){
                 case 6:
                     autoVariations[0] = AutoVariations.SECONDROW;
@@ -178,6 +182,7 @@ public class RunAuto extends OpMode {
             Pose gatetoshootcp = new Pose(52.665, 53.268);
             Pose secondtoshootcp = new Pose(52.665, 53.268);
             buildPaths(secondtoshootcp, gatetoshootcp);
+            april_tag_id = 20;
             switch (IdNum){
                 case 2:
                     autoVariations[0] = AutoVariations.SECONDROW;
@@ -631,21 +636,26 @@ public class RunAuto extends OpMode {
                     }
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 100) {
+                    llResult = implement.getLimelightResult();
+                    int id = -1;
                     if (llResult != null && llResult.isValid()){
+                        id = llResult.getFiducialResults().get(0).getFiducialId();
                         telemetry.addData("Tx", llResult.getTx());
                         telemetry.addData("Ty", llResult.getTy());
                         telemetry.addData("Ta", llResult.getTa());
                         movement.pid_turn_by_gyro(llResult.getTx(), offset, 0.5);
                         telemetry.update();
                     }
-                    implement.shoot();
-                    implement.setIntakePower(-0.15);
-                    sleep(150);
-                    implement.setIntakePower(1);
-                    sleep(250);
-                    implement.shoot();
-                    sleep(250);
-                    implement.shoot();
+                    if (id == april_tag_id) {
+                        implement.shoot();
+                        implement.setIntakePower(-0.15);
+                        sleep(150);
+                        implement.setIntakePower(1);
+                        sleep(250);
+                        implement.shoot();
+                        sleep(250);
+                        implement.shoot();
+                    }
 
                     if (autoVariations[idx] == AutoVariations.FIRSTROW) {
                         constants.pathState = AutonomousConstants.PathState.SHOOTPOS_FIRSTROW;
