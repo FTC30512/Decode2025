@@ -60,15 +60,14 @@ public class AutonomousImplements {
     }
     public void shoot() {
         intake.setPower(0);
-        gateServo.setPosition(0.3);
-        sleep(100);
         shooterServo.setPosition(0.35);
         sleep(250);
         shooterServo.setPosition(0);
-        sleep(175);
-        gateServo.setPosition(0);
+        sleep(250);
+        intake.setPower(-0.25);
         sleep(100);
         intake.setPower(1);
     }
+
 
 }

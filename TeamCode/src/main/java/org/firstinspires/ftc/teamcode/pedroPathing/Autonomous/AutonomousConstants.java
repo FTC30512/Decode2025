@@ -43,12 +43,12 @@ public class AutonomousConstants {
             new Pose(20, 38, Math.toRadians(70)),          // Home Base Start Pose
             new Pose(7.5, 10, Math.toRadians(90)),         // Home Base End Pose
             new Pose(26, 71.5, Math.toRadians(90)),        // Gate Pose Half
-            new Pose(17, 71.5, Math.toRadians(90)),        // Gate Pose Final
+            new Pose(16, 71.5, Math.toRadians(90)),        // Gate Pose Final
             new Pose(48, 72, Math.toRadians(180))          // End Pose
     );
     AutoCoordinateMap AutoBlue2 = new AutoCoordinateMap(
             new Pose(56.500, 11.500, Math.toRadians(90)),                         // Start Pose
-            new Pose(58.000, 21.000, Math.toRadians(110)),                        // Shoot Pose
+            new Pose(58.000, 21.000, Math.toRadians(105)),                        // Shoot Pose
             new Pose(44.000, 87.000, Math.toRadians(0)),                          // First Row Start Pose
             new Pose(25.000, 87.000, Math.toRadians(0)),                          // First Row End Pose
             new Pose(46.000, 60.000, Math.toRadians(0)),                          // Second Row Start Pose
@@ -56,7 +56,7 @@ public class AutonomousConstants {
             new Pose(46.000, 38.000, Math.toRadians(0)),                          // Third Row Start Pose
             new Pose(15, 38.000, Math.toRadians(0)),                              // Third Row End Pose
             new Pose(24, 38, Math.toRadians(50)),                                 // Home Base Start Pose
-            new Pose(5, 13, Math.toRadians(90)),                                // Home Base End Pose
+            new Pose(8, 13, Math.toRadians(90)),                                // Home Base End Pose
             new Pose(24, 67, Math.toRadians(90)),                                 // Gate Pose Half
             new Pose(16, 67, Math.toRadians(90)),                                 // Gate Pose Final
             new Pose(38.71408250355619, 33.5931721194879, Math.toRadians(180))    // End Pose
@@ -85,8 +85,8 @@ public class AutonomousConstants {
             new Pose(129.000, 60.000, Math.toRadians(180)),                        // Second Row End Pose
             new Pose(98.000, 38.000, Math.toRadians(180)),                         // Third Row Start Pose
             new Pose(129.000, 38.000, Math.toRadians(180)),                        // Third Row End Pose
-            new Pose(124, 38, Math.toRadians(70)),                                 // Home Base Start Pose
-            new Pose(136.5, 10, Math.toRadians(90)),                               // Home Base End Pose
+            new Pose(116, 38, Math.toRadians(130)),                                 // Home Base Start Pose
+            new Pose(136.5, 13, Math.toRadians(90)),                               // Home Base End Pose
             new Pose(120, 67, Math.toRadians(90)),                                 // Gate Pose Half
             new Pose(128, 67, Math.toRadians(90)),                                 // Gate Pose Final
             new Pose(105.32586660900631, 33.079429420265015, Math.toRadians(0))    // End Pose

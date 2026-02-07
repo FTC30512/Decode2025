@@ -107,7 +107,7 @@ public class RunAuto extends OpMode {
             autoPose = AutoPose.AUTO_BLUE_1;
             autoMap = constants.AutoBlue1;
             Pose gatetoshootcp = new Pose(64, 63);
-            buildPaths(null, gatetoshootcp);
+            buildPaths(null, gatetoshootcp, null);
             switch (IdNum) {
                 case 0:
                     autoVariations[0] = AutoVariations.SECONDROW;
@@ -130,8 +130,8 @@ public class RunAuto extends OpMode {
         else if (IdNum == 4 || IdNum == 5) {
             autoPose = AutoPose.AUTO_RED_1;
             autoMap = constants.AutoRed1;
-            Pose gatetoshootcp = new Pose(80, 63);
-            buildPaths(null, gatetoshootcp);
+//            Pose gatetoshootcp = new Pose(80, 63);
+            buildPaths(null, null, null);
             switch (IdNum){
                 case 4:
                     autoVariations[0] = AutoVariations.SECONDROW;
@@ -148,12 +148,13 @@ public class RunAuto extends OpMode {
             }
             implement.setShooterVelocity(constants.nearShooterSpeed);
         }
-        else if (IdNum == 6 || IdNum == 7) {
+        else if (IdNum == 6 || IdNum == 7 || IdNum == 9) {
             autoPose = AutoPose.AUTO_RED_2;
             autoMap = constants.AutoRed2;
             Pose gatetoshootcp = new Pose(84.40694769008739, 63.48483482567039);
             Pose secondtoshootcp = new Pose(84.40694769008739, 63.48483482567039);
-            buildPaths(secondtoshootcp, gatetoshootcp);
+            Pose homebasecp = new Pose(133.76, 33);
+            buildPaths(secondtoshootcp, gatetoshootcp, homebasecp);
             switch (IdNum){
                 case 6:
                     autoVariations[0] = AutoVariations.SECONDROW;
@@ -165,6 +166,10 @@ public class RunAuto extends OpMode {
                     autoVariations[1] = AutoVariations.THIRDROW;
                     autoVariations[2] = AutoVariations.ENDPOSE;
                     break;
+                case 9:
+                    autoVariations[0] = AutoVariations.THIRDROW;
+                    autoVariations[1] = AutoVariations.HOME;
+                    autoVariations[2] = AutoVariations.ENDPOSE;
                 default:
                     break;
             }
@@ -177,7 +182,8 @@ public class RunAuto extends OpMode {
             autoMap = constants.AutoBlue2;
             Pose gatetoshootcp = new Pose(52.665, 53.268);
             Pose secondtoshootcp = new Pose(52.665, 53.268);
-            buildPaths(secondtoshootcp, gatetoshootcp);
+            Pose homebasecp = new Pose(10.24, 33);
+            buildPaths(secondtoshootcp, gatetoshootcp, homebasecp);
             switch (IdNum){
                 case 2:
                     autoVariations[0] = AutoVariations.SECONDROW;
@@ -223,7 +229,7 @@ public class RunAuto extends OpMode {
         telemetry.addData("Max Power", follower.getMaxPowerScaling());
         telemetry.update();
     }
-    public void buildPaths(Pose second_to_shoot_cp, Pose gate_to_shoot_cp) {
+    public void buildPaths(Pose second_to_shoot_cp, Pose gate_to_shoot_cp, Pose homebasecp) {
 
         pathStarttoShoot = follower
                 .pathBuilder()
@@ -337,14 +343,15 @@ public class RunAuto extends OpMode {
                 )
                 .setLinearHeadingInterpolation(autoMap.shootPose.getHeading(), autoMap.homeBaseStartPose.getHeading())
                 .build();
-
-        pathHomeCollect = follower
-                .pathBuilder()
-                .addPath(
-                        new BezierLine(autoMap.homeBaseStartPose, autoMap.homeBaseEndPose)
-                )
-                .setLinearHeadingInterpolation(autoMap.homeBaseStartPose.getHeading(), autoMap.homeBaseEndPose.getHeading())
-                .build();
+        if (homebasecp != null) {
+            pathHomeCollect = follower
+                    .pathBuilder()
+                    .addPath(
+                            new BezierCurve(autoMap.homeBaseStartPose, homebasecp, autoMap.homeBaseEndPose)
+                    )
+                    .setLinearHeadingInterpolation(autoMap.homeBaseStartPose.getHeading(), autoMap.homeBaseEndPose.getHeading())
+                    .build();
+        }
 
         pathHometoShoot = follower
                 .pathBuilder()
@@ -557,7 +564,7 @@ public class RunAuto extends OpMode {
                     waiting = true;
                 }
                 if (waiting && System.currentTimeMillis() - waitStart >= 100) {
-                    follower.followPath(pathHomeCollect, collectSpeed, true);
+                    follower.followPath(pathHomeCollect, 0.5, true);
                     constants.pathState = AutonomousConstants.PathState.HOME_SHOOTPOS;
                     waiting = false;
 
