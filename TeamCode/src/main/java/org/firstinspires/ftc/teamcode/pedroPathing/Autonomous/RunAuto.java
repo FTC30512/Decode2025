@@ -176,6 +176,7 @@ public class RunAuto extends OpMode {
 
             implement.setShooterVelocity(constants.farShooterSpeed);
             offset = 2.0;
+            second_to_shoot_speed = 0.8;
         }
         else{
             autoPose = AutoPose.AUTO_BLUE_2;
@@ -206,6 +207,7 @@ public class RunAuto extends OpMode {
             implement.setShooterVelocity(constants.farShooterSpeed);
 //            third_to_shoot_speed = 0.8;
 //            second_to_shoot_speed = 0.8;
+            offset = 1;
         }
 
         constants.pathState = AutonomousConstants.PathState.STARTPOS_SHOOTPOS;

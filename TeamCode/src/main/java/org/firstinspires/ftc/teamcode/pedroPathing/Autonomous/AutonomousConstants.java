@@ -73,7 +73,7 @@ public class AutonomousConstants {
             new Pose(124, 38, Math.toRadians(70)),          // Home Base Start Pose
             new Pose(136.5, 10, Math.toRadians(90)),        // Home Base End Pose
             new Pose(120, 71.5, Math.toRadians(90)),        // Gate Pose Half
-            new Pose(128, 71.5, Math.toRadians(90)),        // Gate Pose Final
+            new Pose(129, 71.5, Math.toRadians(90)),        // Gate Pose Final
             new Pose(96, 72, Math.toRadians(0))             // End Pose
     );
     AutoCoordinateMap AutoRed2 = new AutoCoordinateMap(

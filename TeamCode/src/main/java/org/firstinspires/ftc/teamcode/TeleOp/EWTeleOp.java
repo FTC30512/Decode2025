@@ -46,6 +46,10 @@ public class EWTeleOp extends LinearOpMode {
     private boolean dpadUp = false;
     private boolean dpadDown = false;
 
+    private int IdNum = 25;
+
+    private double offset;
+
 
     private int shooterSpeedMin = 2200, shooterSpeedMax = 2475;
     private double shooterSpeed;
@@ -126,12 +130,26 @@ public class EWTeleOp extends LinearOpMode {
 //                telemetry.addLine("Shooting");
             }
             if (llResult != null && llResult.isValid()){
-                if (llResult.getTa() > 0.315) {
+                if (llResult.getTa() > 0.35) {
                     shooterSpeed = (-275 * llResult.getTa()) + 2557.5;
                 }else{
-                    shooterSpeed = 2850;
+                    shooterSpeed = 2900;
                 }
             }
+
+            if (llResult != null && llResult.isValid() && !llResult.getFiducialResults().isEmpty()) {
+                IdNum = llResult.getFiducialResults().get(0).getFiducialId();
+                telemetry.addData("AprilTag ID", IdNum);
+            } else {
+                telemetry.addLine("No AprilTag detected");
+            }
+
+            if (IdNum == 24){
+                offset = 2.5 ;
+            } else if (IdNum == 20) {
+                offset = 1;
+            }
+
             shooter.setVelocity(shooterSpeed);
 //            if (llResult.getTa() < 0.5){
 //                shooter.setVelocity(shooterSpeedMax);
@@ -222,7 +240,7 @@ public class EWTeleOp extends LinearOpMode {
 
     // --- Shooting method ---
     public void shoot() {
-        pid_turn_by_gyro(llResult.getTx()+1, 0.5);
+        pid_turn_by_gyro(llResult.getTx()+offset, 0.5);
         intake.setPower(0);
 //        gateServo.setPosition(0.3);
 //        sleep(100);
