@@ -1,21 +1,29 @@
 /**
- * Top-level build file for FTC project.
- * You normally don’t need to edit this.
+ * Top-level build file for ftc_app project.
+ *
+ * It is extraordinarily rare that you will ever need to edit this file.
  */
 
 buildscript {
     repositories {
-        google()
         mavenCentral()
+        google()
     }
     dependencies {
+        // Note for FTC Teams: Do not modify this yourself.
         classpath 'com.android.tools.build:gradle:8.6.1'
     }
 }
 
-// ✅ Do NOT declare repositories here if you're using RepositoriesMode.FAIL_ON_PROJECT_REPOS
-//    All repositories are managed in settings.gradle instead.
-
+// This is now required because aapt2 has to be downloaded from the
+// google() repository beginning with version 3.2 of the Android Gradle Plugin
 allprojects {
-    // Leave empty on purpose
+    repositories {
+        mavenCentral()
+        google()
+    }
+}
+
+repositories {
+    mavenCentral()
 }
