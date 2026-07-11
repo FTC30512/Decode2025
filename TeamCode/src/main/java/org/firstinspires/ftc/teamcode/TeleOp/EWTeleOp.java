@@ -228,7 +228,7 @@ public class EWTeleOp extends LinearOpMode {
                 .build();
 
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
-        limelight.pipelineSwitch(1);
+        limelight.pipelineSwitch(2);
         intake.setDirection(DcMotorSimple.Direction.REVERSE);
 
         for (DcMotor m : new DcMotor[]{leftFront, leftRear, rightFront, rightRear}) {

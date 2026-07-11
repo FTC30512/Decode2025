@@ -30,7 +30,7 @@ public class LimelightTest extends OpMode {
     public void init() {
         initHardware();
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
-        limelight.pipelineSwitch(1);
+        limelight.pipelineSwitch(2);
         imu = hardwareMap.get(IMU.class, "imu");
         RevHubOrientationOnRobot revHubOrientationOnRobot = new RevHubOrientationOnRobot(
                 RevHubOrientationOnRobot.LogoFacingDirection.UP,
@@ -53,6 +53,7 @@ public class LimelightTest extends OpMode {
             pid_turn_by_gyro(llResult.getTx(), 0.5);
             telemetry.update();
         }
+
     }
 
     private double getHeading() {
