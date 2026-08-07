@@ -21,7 +21,7 @@ import org.firstinspires.ftc.teamcode.TeleOp.HelperTeleOp.Movement;
 import org.firstinspires.ftc.vision.apriltag.AprilTagLibrary;
 
 @TeleOp(name = "EW TeleOp", group = "Main")
-public class EWTeleOp extends LinearOpMode {
+public class EWTeleOpComp extends LinearOpMode {
 
     private LLResult llResult;
     private ElapsedTime runtime = new ElapsedTime();
