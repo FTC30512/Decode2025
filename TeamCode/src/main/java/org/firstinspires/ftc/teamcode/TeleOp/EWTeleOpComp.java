@@ -84,9 +84,7 @@ public class EWTeleOpComp extends LinearOpMode {
         // --- Main loop ---
         while (opModeIsActive()) {
 
-            if (runtime.seconds() > 105){
-                gamepad1.rumble(15000);
-            }
+
 
             YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
             limelight.updateRobotOrientation(orientation.getYaw(AngleUnit.DEGREES));
@@ -181,9 +179,10 @@ public class EWTeleOpComp extends LinearOpMode {
 //            telemetry.addData("Shooter Servo Position", shooterServo.getPosition());
 //            telemetry.addData("Shooter Power", shooter.getPower());
 //            telemetry.update();
-            telemetry.addData("Lx", gamepad1.left_stick_x);
-            telemetry.addData("Ly", gamepad1.left_stick_y);
-            telemetry.addData("ShooterVelocity", shooter.getVelocity());
+            telemetry.addData("Time Left", "%d:%02d", 120-(int)runtime.seconds() / 60, 120-(int) runtime.seconds() % 60);
+//            telemetry.addData("Lx", gamepad1.left_stick_x);
+//            telemetry.addData("Ly", gamepad1.left_stick_y);
+//            telemetry.addData("ShooterVelocity", shooter.getVelocity());
             telemetry.update();
         }
     }
